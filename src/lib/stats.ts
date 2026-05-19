@@ -6,6 +6,29 @@ export interface CheckinForStats {
   activity_type?: { name?: string } | null;
 }
 
+function normalizeActivityType(
+  activityType: { name?: string } | { name?: string }[] | null | undefined,
+): { name?: string } | null {
+  if (!activityType) return null;
+  if (Array.isArray(activityType)) return activityType[0] ?? null;
+  return activityType;
+}
+
+/** Normaliza resposta do Supabase (activity_type pode vir como objeto ou array). */
+export function normalizeCheckinsForStats(
+  checkins: Array<{
+    points: number;
+    checked_in_at: string;
+    activity_type?: { name?: string } | { name?: string }[] | null;
+  }>,
+): CheckinForStats[] {
+  return checkins.map((c) => ({
+    points: c.points,
+    checked_in_at: c.checked_in_at,
+    activity_type: normalizeActivityType(c.activity_type),
+  }));
+}
+
 export function computeUserStatsFromCheckins(
   checkins: CheckinForStats[],
   referenceDate: Date = new Date(),

@@ -10,7 +10,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { evaluateCheckinLimits } from "@/lib/checkin-rules";
 import { calculateStreakFromCheckinDates } from "@/lib/streak";
-import { computeUserStatsFromCheckins } from "@/lib/stats";
+import { computeUserStatsFromCheckins, normalizeCheckinsForStats } from "@/lib/stats";
 import type { ActionResult } from "@/actions/auth";
 import type { ActivityType, CheckinVisibility } from "@/types/database";
 
@@ -235,7 +235,9 @@ export async function getUserStats(userId: string, groupId?: string) {
 
   const { data: checkins } = await query;
 
-  const stats = computeUserStatsFromCheckins(checkins ?? []);
+  const stats = computeUserStatsFromCheckins(
+    normalizeCheckinsForStats(checkins ?? []),
+  );
   const streak = groupId ? await calculateStreak(userId, groupId) : 0;
 
   return {
