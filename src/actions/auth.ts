@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { getAppUrl } from "@/lib/app-url";
 import { createClient } from "@/lib/supabase/server";
 import { COOKIE_NAME } from "@/lib/active-group";
 
@@ -34,7 +35,7 @@ export async function signUp(formData: FormData): Promise<SignUpResult> {
     password,
     options: {
       data: { name },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+      emailRedirectTo: `${getAppUrl()}/auth/callback`,
     },
   });
 
@@ -90,7 +91,7 @@ export async function resetPassword(formData: FormData): Promise<ActionResult> {
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/profile`,
+    redirectTo: `${getAppUrl()}/auth/callback?next=/profile`,
   });
 
   if (error) {

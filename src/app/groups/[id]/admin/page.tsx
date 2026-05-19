@@ -6,6 +6,7 @@ import {
   getGroupActivities,
   isUserAdmin,
 } from "@/actions/groups";
+import { getAppUrl } from "@/lib/app-url";
 import { createClient } from "@/lib/supabase/server";
 import { AdminPanel } from "@/components/groups/admin-panel";
 import type { Group, ActivityType } from "@/types/database";
@@ -34,7 +35,7 @@ export default async function GroupAdminPage({
   const members = await getGroupMembers(groupId);
   const activities = (await getGroupActivities(groupId)) as ActivityType[];
 
-  const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${group.invite_code}`;
+  const inviteUrl = `${getAppUrl()}/invite/${group.invite_code}`;
 
   return (
     <div className="min-h-screen gradient-subtle">
