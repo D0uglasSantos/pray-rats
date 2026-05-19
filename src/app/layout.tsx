@@ -8,14 +8,14 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Pray Rats — Constância espiritual em grupo",
+  title: "PrayRats — Constância espiritual em grupo",
   description:
     "Registre momentos de fé, acompanhe sua caminhada e incentive seus amigos na jornada cristã.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Pray Rats",
+    title: "PrayRats",
   },
   icons: {
     icon: [

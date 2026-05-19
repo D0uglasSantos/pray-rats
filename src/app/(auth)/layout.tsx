@@ -14,7 +14,7 @@ export default function AuthLayout({
               alt="PrayRats"
               className="h-20 w-20 mx-auto rounded-2xl shadow-lg mb-4 object-contain"
             />
-            <h1 className="text-2xl font-bold text-foreground">Pray Rats</h1>
+            <h1 className="text-2xl font-bold text-foreground">PrayRats</h1>
             <p className="text-sm text-muted mt-1">
               Constância espiritual em grupo
             </p>
