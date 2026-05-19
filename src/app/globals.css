@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #faf9f7;
-  --foreground: #1a1625;
-  --primary: #5b4b8a;
-  --primary-light: #7c6bae;
-  --primary-dark: #3d2f66;
-  --accent: #d4a574;
-  --accent-light: #e8c9a0;
+  --background: #faf8ff;
+  --foreground: #1e1033;
+  --primary: #7b3fe4;
+  --primary-light: #9d50bb;
+  --primary-dark: #5b21b6;
+  --accent: #c084fc;
+  --accent-light: #e9d5ff;
   --surface: #ffffff;
-  --surface-secondary: #f3f0fa;
-  --muted: #6b6578;
-  --border: #e8e4ef;
+  --surface-secondary: #f3ecff;
+  --muted: #6b6280;
+  --border: #e4d4ff;
   --success: #4a9d6f;
   --error: #c44d4d;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -51,11 +51,11 @@ body {
 }
 
 .gradient-spiritual {
-  background: linear-gradient(135deg, #5b4b8a 0%, #7c6bae 50%, #d4a574 100%);
+  background: linear-gradient(135deg, #9d50bb 0%, #7b3fe4 45%, #6e48aa 100%);
 }
 
 .gradient-subtle {
-  background: linear-gradient(180deg, #f3f0fa 0%, #faf9f7 100%);
+  background: linear-gradient(180deg, #f3ecff 0%, #faf8ff 100%);
 }
 
 .safe-bottom {

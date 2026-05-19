@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/logo.svg", type: "image/svg+xml" },
+      { url: "/logo-pray-rats.png", sizes: "251x236", type: "image/png" },
     ],
     apple: "/apple-touch-icon.png",
   },
@@ -31,7 +31,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#1a2744",
+  themeColor: "#7b3fe4",
 };
 
 export default function RootLayout({
