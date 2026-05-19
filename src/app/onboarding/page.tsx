@@ -19,14 +19,15 @@ export default async function OnboardingPage() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/logo-pray-rats-256.png"
-          alt="Pray Rats"
+          alt="PrayRats"
           className="h-20 w-20 mx-auto rounded-3xl shadow-lg mb-6 object-contain"
         />
         <h1 className="text-2xl font-bold text-foreground mb-2">
           Bem-vindo à jornada!
         </h1>
         <p className="text-muted mb-8">
-          Convide seus amigos para essa jornada. Crie um grupo ou entre com um código de convite.
+          Convide seus amigos para essa jornada. Crie um grupo ou entre com um
+          código de convite.
         </p>
 
         <div className="space-y-3">
@@ -37,7 +38,9 @@ export default async function OnboardingPage() {
               </div>
               <div className="text-left flex-1">
                 <p className="font-semibold">Criar grupo</p>
-                <p className="text-sm text-muted">Inicie um desafio espiritual</p>
+                <p className="text-sm text-muted">
+                  Inicie um desafio espiritual
+                </p>
               </div>
             </Card>
           </Link>

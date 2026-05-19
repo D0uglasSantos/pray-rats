@@ -11,7 +11,7 @@ export default function AuthLayout({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo-pray-rats-256.png"
-              alt="Pray Rats"
+              alt="PrayRats"
               className="h-20 w-20 mx-auto rounded-2xl shadow-lg mb-4 object-contain"
             />
             <h1 className="text-2xl font-bold text-foreground">Pray Rats</h1>
