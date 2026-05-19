@@ -10,7 +10,7 @@ export default function AuthLayout({
           <div className="text-center mb-8">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/logo-pray-rats.png"
+              src="/logo-pray-rats-256.png"
               alt="Pray Rats"
               className="h-20 w-20 mx-auto rounded-2xl shadow-lg mb-4 object-contain"
             />

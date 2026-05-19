@@ -18,7 +18,7 @@ export default async function OnboardingPage() {
       <div className="w-full max-w-sm text-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/logo-pray-rats.png"
+          src="/logo-pray-rats-256.png"
           alt="Pray Rats"
           className="h-20 w-20 mx-auto rounded-3xl shadow-lg mb-6 object-contain"
         />
