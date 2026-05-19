@@ -251,6 +251,53 @@ export async function getUserGroups(userId: string): Promise<GroupWithRole[]> {
   }));
 }
 
+export async function getGroupById(groupId: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("groups")
+    .select("*")
+    .eq("id", groupId)
+    .single();
+
+  if (error) return null;
+  return data;
+}
+
+export async function getGroupMemberStats(groupId: string) {
+  const supabase = await createClient();
+
+  const { data: rankings } = await supabase
+    .from("group_rankings")
+    .select("user_id, total_points, total_checkins")
+    .eq("group_id", groupId);
+
+  const statsMap = new Map(
+    (rankings ?? []).map((r) => [r.user_id, r]),
+  );
+
+  const members = await getGroupMembers(groupId);
+
+  return members.map((member) => {
+    const profile = Array.isArray(member.profile)
+      ? member.profile[0]
+      : member.profile;
+    const stats = statsMap.get(
+      (member as { user_id: string }).user_id,
+    );
+
+    return {
+      id: member.id,
+      user_id: (member as { user_id: string }).user_id,
+      role: member.role,
+      joined_at: member.joined_at,
+      profile,
+      total_points: stats?.total_points ?? 0,
+      total_checkins: stats?.total_checkins ?? 0,
+    };
+  });
+}
+
 export async function getGroupMembers(groupId: string) {
   const supabase = await createClient();
 

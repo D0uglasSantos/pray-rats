@@ -83,12 +83,9 @@ export default async function DashboardPage() {
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold text-foreground">Check-ins de hoje</h2>
-          <Link
-            href="/journey"
-            className="text-sm text-primary flex items-center gap-0.5"
-          >
-            Caminhada <ChevronRight className="h-4 w-4" />
-          </Link>
+          <Link href="/group" className="text-sm text-primary flex items-center gap-0.5">
+          Ver grupo <ChevronRight className="h-4 w-4" />
+        </Link>
         </div>
 
         {todayCheckins.length === 0 ? (
@@ -104,12 +101,20 @@ export default async function DashboardPage() {
         ) : (
           <div className="space-y-3">
             {todayCheckins.map((checkin) => (
-              <Card key={checkin.id} padding="sm" className="flex items-center justify-between">
-                <div>
+              <Card key={checkin.id} padding="sm" className="flex items-center gap-3">
+                {checkin.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={checkin.image_url}
+                    alt=""
+                    className="h-14 w-14 rounded-lg object-cover shrink-0"
+                  />
+                )}
+                <div className="flex-1 min-w-0">
                   <Badge variant="primary" className="mb-1">
                     {(checkin.activity_type as { name: string })?.name}
                   </Badge>
-                  <p className="font-medium">{checkin.title}</p>
+                  <p className="font-medium truncate">{checkin.title}</p>
                 </div>
                 <Badge variant="accent">+{checkin.points}</Badge>
               </Card>

@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Newspaper, Plus, Trophy, User } from "lucide-react";
+import { Home, Newspaper, Plus, Users, User } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 const navItems = [
   { href: "/", label: "Hoje", icon: Home },
-  { href: "/feed", label: "Feed", icon: Newspaper },
+  { href: "/group", label: "Grupo", icon: Users },
   { href: "/check-in", label: "Check-in", icon: Plus, highlight: true },
-  { href: "/ranking", label: "Ranking", icon: Trophy },
+  { href: "/feed", label: "Feed", icon: Newspaper },
   { href: "/profile", label: "Perfil", icon: User },
 ];
 

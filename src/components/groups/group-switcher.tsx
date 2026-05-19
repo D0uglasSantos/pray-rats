@@ -9,9 +9,11 @@ import { cn } from "@/lib/utils/cn";
 export function GroupSwitcher({
   groups,
   activeGroupId,
+  variant = "dark",
 }: {
   groups: GroupWithRole[];
   activeGroupId: string | null;
+  variant?: "dark" | "light";
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -19,7 +21,12 @@ export function GroupSwitcher({
     const group = groups[0];
     if (!group) return null;
     return (
-      <span className="text-sm font-medium text-white/90 truncate">
+      <span
+        className={cn(
+          "text-sm font-medium truncate",
+          variant === "dark" ? "text-white/90" : "text-foreground",
+        )}
+      >
         {group.name}
       </span>
     );
@@ -36,10 +43,11 @@ export function GroupSwitcher({
           });
         }}
         className={cn(
-          "appearance-none bg-white/15 text-white text-sm font-medium",
-          "rounded-lg pl-3 pr-8 py-1.5 border border-white/20",
-          "focus:outline-none focus:ring-2 focus:ring-white/30",
-          "max-w-[180px] truncate",
+          "appearance-none text-sm font-medium rounded-lg pl-3 pr-8 py-1.5",
+          "focus:outline-none focus:ring-2 max-w-[180px] truncate",
+          variant === "dark"
+            ? "bg-white/15 text-white border border-white/20 focus:ring-white/30"
+            : "bg-surface border border-border text-foreground focus:ring-primary/30",
         )}
       >
         {groups.map((g) => (
@@ -48,7 +56,12 @@ export function GroupSwitcher({
           </option>
         ))}
       </select>
-      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-white/70 pointer-events-none" />
+      <ChevronDown
+        className={cn(
+          "absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none",
+          variant === "dark" ? "text-white/70" : "text-muted",
+        )}
+      />
     </div>
   );
 }

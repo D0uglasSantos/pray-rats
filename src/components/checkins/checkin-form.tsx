@@ -2,11 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createCheckinForm } from "@/actions/checkins";
+import { createCheckinForm, uploadCheckinImage } from "@/actions/checkins";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { ImageUpload } from "@/components/checkins/image-upload";
 import { cn } from "@/lib/utils/cn";
 import type { ActivityType, CheckinVisibility } from "@/types/database";
 import { Lock, Globe } from "lucide-react";
@@ -22,6 +23,8 @@ export function CheckinForm({ groupId, activities }: CheckinFormProps) {
     null,
   );
   const [visibility, setVisibility] = useState<CheckinVisibility>("public");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -31,6 +34,22 @@ export function CheckinForm({ groupId, activities }: CheckinFormProps) {
   function selectActivity(activity: ActivityType) {
     setSelectedActivity(activity);
     setVisibility(activity.is_private_default ? "private" : "public");
+  }
+
+  function handleSelectImage(file: File) {
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Imagem deve ter no máximo 5MB.");
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setError(null);
+  }
+
+  function handleClearImage() {
+    setImageFile(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
   }
 
   function handleSubmit(formData: FormData) {
@@ -45,8 +64,21 @@ export function CheckinForm({ groupId, activities }: CheckinFormProps) {
 
     startTransition(async () => {
       setError(null);
+
+      if (imageFile) {
+        const uploadData = new FormData();
+        uploadData.set("file", imageFile);
+        const uploadResult = await uploadCheckinImage(uploadData);
+        if (!uploadResult.success) {
+          setError(uploadResult.error);
+          return;
+        }
+        formData.set("image_url", uploadResult.data!.url);
+      }
+
       const result = await createCheckinForm(formData);
       if (result.success) {
+        handleClearImage();
         setSuccess(true);
         setTimeout(() => router.push("/"), 1500);
       } else {
@@ -114,6 +146,13 @@ export function CheckinForm({ groupId, activities }: CheckinFormProps) {
             min={1}
           />
 
+          <ImageUpload
+            preview={imagePreview}
+            onSelect={handleSelectImage}
+            onClear={handleClearImage}
+            disabled={isPending}
+          />
+
           <div>
             <p className="text-sm font-medium mb-2">Visibilidade</p>
             <div className="flex gap-2">
@@ -144,6 +183,11 @@ export function CheckinForm({ groupId, activities }: CheckinFormProps) {
                 <span className="text-sm font-medium">Privado</span>
               </button>
             </div>
+            {visibility === "public" && imagePreview && (
+              <p className="text-xs text-muted mt-2">
+                Fotos em check-ins públicos aparecem no feed do grupo.
+              </p>
+            )}
           </div>
 
           {error && (
