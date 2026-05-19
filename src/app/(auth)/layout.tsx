@@ -8,9 +8,12 @@ export default function AuthLayout({
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl gradient-spiritual text-white text-2xl font-bold mb-4">
-              ✝
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="Pray Rats"
+              className="h-20 w-20 mx-auto rounded-2xl shadow-lg mb-4 object-cover"
+            />
             <h1 className="text-2xl font-bold text-foreground">Pray Rats</h1>
             <p className="text-sm text-muted mt-1">
               Constância espiritual em grupo
