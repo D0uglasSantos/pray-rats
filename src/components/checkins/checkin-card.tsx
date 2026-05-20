@@ -3,6 +3,7 @@ import { ptBR } from "date-fns/locale";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { getCheckinImageDisplayUrl } from "@/lib/checkin-image-url";
 
 interface CheckinCardProps {
   checkin: {
@@ -58,7 +59,7 @@ export function CheckinCard({ checkin }: CheckinCardProps) {
       {checkin.image_url && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={checkin.image_url}
+          src={getCheckinImageDisplayUrl(checkin.image_url)}
           alt=""
           className="w-full h-48 object-cover rounded-xl"
         />

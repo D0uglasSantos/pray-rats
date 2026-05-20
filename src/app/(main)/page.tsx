@@ -10,6 +10,7 @@ import {
   getWeeklyPoints,
 } from "@/actions/checkins";
 import { getProfile, getUserRankingPosition } from "@/actions/profile";
+import { getCheckinImageDisplayUrl } from "@/lib/checkin-image-url";
 import { GroupSwitcher } from "@/components/groups/group-switcher";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -105,7 +106,7 @@ export default async function DashboardPage() {
                 {checkin.image_url && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={checkin.image_url}
+                    src={getCheckinImageDisplayUrl(checkin.image_url)}
                     alt=""
                     className="h-14 w-14 rounded-lg object-cover shrink-0"
                   />

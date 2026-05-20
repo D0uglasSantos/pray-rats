@@ -2,6 +2,7 @@ import {
   CHECKIN_IMAGE_MAX_BYTES,
   checkinImageSizeError,
 } from "@/lib/checkin-image-limits";
+import { prepareCheckinImageForUpload } from "@/lib/prepare-checkin-image";
 import { createClient } from "@/lib/supabase/client";
 
 export type UploadCheckinImageResult =
@@ -15,7 +16,17 @@ export async function uploadCheckinImageFromClient(
     return { success: false, error: "Selecione uma imagem." };
   }
 
-  if (file.size > CHECKIN_IMAGE_MAX_BYTES) {
+  let prepared: File;
+  try {
+    prepared = await prepareCheckinImageForUpload(file);
+  } catch {
+    return {
+      success: false,
+      error: "Não foi possível processar a imagem. Tente outra foto.",
+    };
+  }
+
+  if (prepared.size > CHECKIN_IMAGE_MAX_BYTES) {
     return { success: false, error: checkinImageSizeError() };
   }
 
@@ -28,14 +39,14 @@ export async function uploadCheckinImageFromClient(
     return { success: false, error: "Faça login para continuar." };
   }
 
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+  const ext = prepared.name.split(".").pop()?.toLowerCase() ?? "jpg";
   const path = `${user.id}/${Date.now()}.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from("checkins")
-    .upload(path, file, {
+    .upload(path, prepared, {
       upsert: false,
-      contentType: file.type || undefined,
+      contentType: prepared.type || "image/jpeg",
     });
 
   if (uploadError) {
