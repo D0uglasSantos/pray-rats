@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createCheckinForm, uploadCheckinImage } from "@/actions/checkins";
+import { createCheckinForm } from "@/actions/checkins";
+import { uploadCheckinImageFromClient } from "@/lib/upload-checkin-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,12 +53,15 @@ export function CheckinForm({ groupId, activities }: CheckinFormProps) {
     setImagePreview(null);
   }
 
-  function handleSubmit(formData: FormData) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
     if (!selectedActivity) {
       setError("Selecione uma atividade.");
       return;
     }
 
+    const formData = new FormData(e.currentTarget);
     formData.set("group_id", groupId);
     formData.set("activity_type_id", selectedActivity.id);
     formData.set("visibility", visibility);
@@ -66,14 +70,12 @@ export function CheckinForm({ groupId, activities }: CheckinFormProps) {
       setError(null);
 
       if (imageFile) {
-        const uploadData = new FormData();
-        uploadData.set("file", imageFile);
-        const uploadResult = await uploadCheckinImage(uploadData);
+        const uploadResult = await uploadCheckinImageFromClient(imageFile);
         if (!uploadResult.success) {
           setError(uploadResult.error);
           return;
         }
-        formData.set("image_url", uploadResult.data!.url);
+        formData.set("image_url", uploadResult.url);
       }
 
       const result = await createCheckinForm(formData);
@@ -98,7 +100,7 @@ export function CheckinForm({ groupId, activities }: CheckinFormProps) {
   }
 
   return (
-    <form action={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <p className="text-sm font-medium mb-3">Tipo de atividade</p>
         <div className="grid grid-cols-2 gap-2">

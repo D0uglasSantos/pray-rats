@@ -69,8 +69,7 @@ export function ImageUpload({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/heic"
-        capture="environment"
+        accept="image/*"
         className="hidden"
         onChange={handleChange}
       />
