@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { DEFAULT_ACTIVITIES } from "@/lib/constants/activities";
 import { generateInviteCode } from "@/lib/invite-code";
+import { differenceInCalendarDays, startOfDay } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import { setActiveGroup, type ActionResult } from "@/actions/auth";
 
@@ -264,6 +265,33 @@ export async function getGroupById(groupId: string) {
   return data;
 }
 
+export async function getGroupStats(
+  groupId: string,
+  startDate: string | null,
+) {
+  const supabase = await createClient();
+
+  const { data: rankings } = await supabase
+    .from("group_rankings")
+    .select("total_checkins")
+    .eq("group_id", groupId);
+
+  const totalCheckins =
+    rankings?.reduce((sum, row) => sum + row.total_checkins, 0) ?? 0;
+
+  const challengeStart = startDate
+    ? startOfDay(new Date(startDate))
+    : startOfDay(new Date());
+  const daysElapsed = Math.max(
+    1,
+    differenceInCalendarDays(startOfDay(new Date()), challengeStart) + 1,
+  );
+  const avgCheckinsPerDay =
+    Math.round((totalCheckins / daysElapsed) * 10) / 10;
+
+  return { totalCheckins, avgCheckinsPerDay };
+}
+
 export async function getGroupMemberStats(groupId: string) {
   const supabase = await createClient();
 
@@ -322,6 +350,19 @@ export async function getGroupActivities(groupId: string) {
 
   if (error) return [];
   return data ?? [];
+}
+
+export async function isUserInGroup(groupId: string, userId: string): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("group_members")
+    .select("id")
+    .eq("group_id", groupId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  return Boolean(data);
 }
 
 export async function isUserAdmin(groupId: string, userId: string) {

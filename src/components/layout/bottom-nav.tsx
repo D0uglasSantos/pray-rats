@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Newspaper, Plus, Users, User } from "lucide-react";
+import { Home, Plus, Trophy, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 const navItems = [
   { href: "/", label: "Hoje", icon: Home },
   { href: "/group", label: "Grupo", icon: Users },
   { href: "/check-in", label: "Check-in", icon: Plus, highlight: true },
-  { href: "/feed", label: "Feed", icon: Newspaper },
+  { href: "/ranking", label: "Classificações", icon: Trophy },
   { href: "/profile", label: "Perfil", icon: User },
 ];
 
@@ -23,7 +23,9 @@ export function BottomNav() {
           const isActive =
             item.href === "/"
               ? pathname === "/"
-              : pathname.startsWith(item.href);
+              : item.href === "/ranking"
+                ? pathname.startsWith("/ranking")
+                : pathname.startsWith(item.href);
           const Icon = item.icon;
 
           if (item.highlight) {

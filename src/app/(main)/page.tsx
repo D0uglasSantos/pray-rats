@@ -84,9 +84,14 @@ export default async function DashboardPage() {
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold text-foreground">Check-ins de hoje</h2>
-          <Link href="/group" className="text-sm text-primary flex items-center gap-0.5">
-          Ver grupo <ChevronRight className="h-4 w-4" />
-        </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/feed" className="text-sm text-primary">
+              Feed
+            </Link>
+            <Link href="/group" className="text-sm text-primary flex items-center gap-0.5">
+              Ver grupo <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
 
         {todayCheckins.length === 0 ? (

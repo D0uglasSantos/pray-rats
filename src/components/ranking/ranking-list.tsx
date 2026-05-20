@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
+import { memberProfilePath } from "@/lib/member-profile-path";
 import { cn } from "@/lib/utils/cn";
 import type { GroupRanking } from "@/types/database";
 import { Medal } from "lucide-react";
@@ -26,14 +28,14 @@ export function RankingList({
         const isCurrentUser = entry.user_id === currentUserId;
 
         return (
-          <Card
-            key={entry.user_id}
-            padding="sm"
-            className={cn(
-              "flex items-center gap-3",
-              isCurrentUser && "ring-2 ring-primary/30 bg-primary/5",
-            )}
-          >
+          <Link key={entry.user_id} href={memberProfilePath(entry.user_id)}>
+            <Card
+              padding="sm"
+              className={cn(
+                "flex items-center gap-3 hover:ring-2 hover:ring-primary/20 transition-all",
+                isCurrentUser && "ring-2 ring-primary/30 bg-primary/5",
+              )}
+            >
             <div className="w-8 text-center shrink-0">
               {position <= 3 ? (
                 <Medal
@@ -66,6 +68,7 @@ export function RankingList({
               <p className="text-[10px] text-muted">pontos</p>
             </div>
           </Card>
+          </Link>
         );
       })}
     </div>

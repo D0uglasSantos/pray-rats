@@ -1,14 +1,19 @@
 import { redirect } from "next/navigation";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { startOfMonth, endOfMonth } from "date-fns";
 import { getSessionUser } from "@/actions/auth";
 import { getActiveGroupId } from "@/lib/active-group";
 import { getUserGroups } from "@/actions/groups";
 import { getUserStats, calculateStreak } from "@/actions/checkins";
 import { PageHeader } from "@/components/layout/page-header";
+import {
+  buildCheckinsByDay,
+  CheckinCalendar,
+} from "@/components/checkins/checkin-calendar";
+import { memberProfilePath } from "@/lib/member-profile-path";
 import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils/cn";
 import { Flame, Calendar, Award } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default async function JourneyPage() {
   const user = await getSessionUser();
@@ -24,16 +29,7 @@ export default async function JourneyPage() {
   const now = new Date();
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
-  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-
-  const checkinDays = new Set(
-    stats.checkins
-      .filter((c) => {
-        const d = new Date(c.checked_in_at);
-        return d >= monthStart && d <= monthEnd;
-      })
-      .map((c) => format(new Date(c.checked_in_at), "yyyy-MM-dd")),
-  );
+  const checkinsByDay = buildCheckinsByDay(stats.checkins, monthStart, monthEnd);
 
   return (
     <div className="space-y-6">
@@ -71,40 +67,13 @@ export default async function JourneyPage() {
         </Card>
       )}
 
-      <Card>
-        <p className="font-medium mb-4">
-          {format(now, "MMMM yyyy", { locale: ptBR })}
-        </p>
-        <div className="grid grid-cols-7 gap-1 text-center">
-          {["D", "S", "T", "Q", "Q", "S", "S"].map((d, i) => (
-            <span key={i} className="text-[10px] text-muted font-medium py-1">
-              {d}
-            </span>
-          ))}
-          {Array.from({ length: monthStart.getDay() }).map((_, i) => (
-            <div key={`empty-${i}`} />
-          ))}
-          {days.map((day) => {
-            const key = format(day, "yyyy-MM-dd");
-            const hasCheckin = checkinDays.has(key);
-            const isToday = isSameDay(day, now);
+      <CheckinCalendar month={now} checkinsByDay={checkinsByDay} today={now} />
 
-            return (
-              <div
-                key={key}
-                className={cn(
-                  "aspect-square flex items-center justify-center rounded-lg text-xs",
-                  hasCheckin && "bg-primary text-white font-semibold",
-                  !hasCheckin && "text-muted",
-                  isToday && !hasCheckin && "ring-2 ring-primary/30",
-                )}
-              >
-                {format(day, "d")}
-              </div>
-            );
-          })}
-        </div>
-      </Card>
+      <Link href={memberProfilePath(user.id)}>
+        <Button variant="secondary" fullWidth>
+          Ver calendário completo
+        </Button>
+      </Link>
 
       <Card padding="sm">
         <p className="text-sm text-muted text-center italic">

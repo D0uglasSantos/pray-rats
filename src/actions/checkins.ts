@@ -132,6 +132,7 @@ export async function createCheckin(
   revalidatePath("/feed");
   revalidatePath("/ranking");
   revalidatePath("/journey");
+  revalidatePath("/group");
 
   return { success: true, data: { checkinId: checkin.id } };
 }
@@ -225,9 +226,12 @@ export async function getUserStats(userId: string, groupId?: string) {
 
   let query = supabase
     .from("checkins")
-    .select("points, checked_in_at, activity_type_id, activity_type:activity_types(name)")
+    .select(
+      "id, points, checked_in_at, duration_minutes, image_url, title, activity_type_id, activity_type:activity_types(name)",
+    )
     .eq("user_id", userId)
-    .eq("status", "valid");
+    .eq("status", "valid")
+    .order("checked_in_at", { ascending: false });
 
   if (groupId) {
     query = query.eq("group_id", groupId);
@@ -240,9 +244,20 @@ export async function getUserStats(userId: string, groupId?: string) {
   );
   const streak = groupId ? await calculateStreak(userId, groupId) : 0;
 
+  const activeDays = new Set(
+    (checkins ?? []).map((c) => startOfDay(new Date(c.checked_in_at)).toISOString()),
+  ).size;
+
+  const totalActiveMinutes = (checkins ?? []).reduce(
+    (sum, c) => sum + (c.duration_minutes ?? 0),
+    0,
+  );
+
   return {
     ...stats,
     currentStreak: streak,
+    activeDays,
+    totalActiveMinutes,
     checkins: checkins ?? [],
   };
 }

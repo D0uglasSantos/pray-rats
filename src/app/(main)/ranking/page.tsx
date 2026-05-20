@@ -18,7 +18,7 @@ export default async function RankingPage({
   if (!activeGroupId) redirect("/onboarding");
 
   const params = await searchParams;
-  const period = (params.period as "weekly" | "monthly" | "general") ?? "weekly";
+  const period = (params.period as "weekly" | "monthly" | "general") ?? "general";
   const rankings = await getRanking(activeGroupId, period);
 
   return (

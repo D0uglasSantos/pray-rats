@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { memberProfilePath } from "@/lib/member-profile-path";
 import { cn } from "@/lib/utils/cn";
 
 interface GroupMemberItem {
@@ -41,14 +43,14 @@ export function GroupMembersList({
         const name = member.profile?.name ?? "Participante";
 
         return (
-          <Card
-            key={member.id}
-            padding="sm"
-            className={cn(
-              "flex items-center gap-3",
-              isCurrentUser && "ring-2 ring-primary/20 bg-primary/5",
-            )}
-          >
+          <Link key={member.id} href={memberProfilePath(member.user_id)}>
+            <Card
+              padding="sm"
+              className={cn(
+                "flex items-center gap-3 hover:ring-2 hover:ring-primary/20 transition-all",
+                isCurrentUser && "ring-2 ring-primary/20 bg-primary/5",
+              )}
+            >
             <Avatar
               src={member.profile?.avatar_url}
               name={name}
@@ -85,6 +87,7 @@ export function GroupMembersList({
               </p>
             </div>
           </Card>
+          </Link>
         );
       })}
     </div>
