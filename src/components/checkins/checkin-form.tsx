@@ -3,6 +3,10 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createCheckinForm } from "@/actions/checkins";
+import {
+  CHECKIN_IMAGE_MAX_BYTES,
+  checkinImageSizeError,
+} from "@/lib/checkin-image-limits";
 import { uploadCheckinImageFromClient } from "@/lib/upload-checkin-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,8 +42,8 @@ export function CheckinForm({ groupId, activities }: CheckinFormProps) {
   }
 
   function handleSelectImage(file: File) {
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Imagem deve ter no máximo 5MB.");
+    if (file.size > CHECKIN_IMAGE_MAX_BYTES) {
+      setError(checkinImageSizeError());
       return;
     }
     setImageFile(file);

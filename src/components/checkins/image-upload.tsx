@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { Camera, X } from "lucide-react";
+import { CHECKIN_IMAGE_MAX_SIZE_LABEL } from "@/lib/checkin-image-limits";
 import { cn } from "@/lib/utils/cn";
 
 interface ImageUploadProps {
@@ -29,6 +30,7 @@ export function ImageUpload({
       <p className="text-sm font-medium mb-2">Foto do momento (opcional)</p>
       <p className="text-xs text-muted mb-3">
         Registre uma foto para comprovar sua atividade — aparece no feed se público.
+        Máximo de {CHECKIN_IMAGE_MAX_SIZE_LABEL} por imagem.
       </p>
 
       {preview ? (

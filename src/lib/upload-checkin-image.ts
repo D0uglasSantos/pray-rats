@@ -1,6 +1,8 @@
+import {
+  CHECKIN_IMAGE_MAX_BYTES,
+  checkinImageSizeError,
+} from "@/lib/checkin-image-limits";
 import { createClient } from "@/lib/supabase/client";
-
-const MAX_BYTES = 5 * 1024 * 1024;
 
 export type UploadCheckinImageResult =
   | { success: true; url: string }
@@ -13,8 +15,8 @@ export async function uploadCheckinImageFromClient(
     return { success: false, error: "Selecione uma imagem." };
   }
 
-  if (file.size > MAX_BYTES) {
-    return { success: false, error: "Imagem deve ter no máximo 5MB." };
+  if (file.size > CHECKIN_IMAGE_MAX_BYTES) {
+    return { success: false, error: checkinImageSizeError() };
   }
 
   const supabase = createClient();
