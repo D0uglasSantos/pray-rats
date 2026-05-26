@@ -58,6 +58,7 @@ export interface Checkin {
   description: string | null;
   image_url: string | null;
   duration_minutes: number | null;
+  distance_km: number | null;
   points: number;
   visibility: CheckinVisibility;
   status: CheckinStatus;
@@ -66,6 +67,26 @@ export interface Checkin {
   updated_at: string;
   profile?: Profile;
   activity_type?: ActivityType;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  read_at: string | null;
+  created_at: string;
+}
+
+export interface PushSubscription {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  created_at: string;
 }
 
 export interface GroupRanking {

@@ -1,17 +1,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Flame, Star, TrendingUp, ChevronRight } from "lucide-react";
+import { Star, Sun, ChevronRight } from "lucide-react";
 import { getSessionUser } from "@/actions/auth";
 import { getActiveGroupId } from "@/lib/active-group";
 import { getUserGroups } from "@/actions/groups";
 import {
   getTodayCheckins,
-  calculateStreak,
   getWeeklyPoints,
+  getDailyPoints,
 } from "@/actions/checkins";
-import { getProfile, getUserRankingPosition } from "@/actions/profile";
+import { getProfile } from "@/actions/profile";
 import { getCheckinImageDisplayUrl } from "@/lib/checkin-image-url";
-import { GroupSwitcher } from "@/components/groups/group-switcher";
+import { DailyQuoteCard } from "@/components/home/daily-quote-card";
+import { CheckinImageButton } from "@/components/checkins/checkin-image-button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,12 +31,7 @@ export default async function DashboardPage() {
   const profile = await getProfile(user.id);
   const todayCheckins = await getTodayCheckins(activeGroup.id, user.id);
   const weeklyPoints = await getWeeklyPoints(user.id, activeGroup.id);
-  const streak = await calculateStreak(user.id, activeGroup.id);
-  const rankingPosition = await getUserRankingPosition(
-    activeGroup.id,
-    user.id,
-    "weekly",
-  );
+  const dailyPoints = await getDailyPoints(user.id, activeGroup.id);
 
   const firstName = profile?.name?.split(" ")[0] ?? "Amigo";
 
@@ -44,9 +40,6 @@ export default async function DashboardPage() {
       <div className="rounded-2xl gradient-spiritual p-5 text-white">
         <p className="text-white/80 text-sm">Como está sua caminhada hoje?</p>
         <h1 className="text-2xl font-bold mt-1">Olá, {firstName} ✝</h1>
-        <div className="mt-3">
-          <GroupSwitcher groups={groups} activeGroupId={activeGroup.id} />
-        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -56,22 +49,13 @@ export default async function DashboardPage() {
           <p className="text-xs text-muted">pts esta semana</p>
         </Card>
         <Card padding="sm" className="text-center">
-          <Flame className="h-5 w-5 text-accent mx-auto mb-1" />
-          <p className="text-2xl font-bold text-primary">{streak}</p>
-          <p className="text-xs text-muted">dias seguidos</p>
-        </Card>
-        <Card padding="sm" className="text-center">
-          <TrendingUp className="h-5 w-5 text-primary mx-auto mb-1" />
-          <p className="text-2xl font-bold text-primary">
-            {rankingPosition ? `${rankingPosition}º` : "—"}
-          </p>
-          <p className="text-xs text-muted">no ranking</p>
-        </Card>
-        <Card padding="sm" className="text-center">
-          <p className="text-2xl font-bold text-primary">{todayCheckins.length}</p>
-          <p className="text-xs text-muted">check-ins hoje</p>
+          <Sun className="h-5 w-5 text-accent mx-auto mb-1" />
+          <p className="text-2xl font-bold text-primary">{dailyPoints}</p>
+          <p className="text-xs text-muted">pts hoje</p>
         </Card>
       </div>
+
+      <DailyQuoteCard />
 
       <div>
         <Link href="/check-in">
@@ -109,11 +93,10 @@ export default async function DashboardPage() {
             {todayCheckins.map((checkin) => (
               <Card key={checkin.id} padding="sm" className="flex items-center gap-3">
                 {checkin.image_url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <CheckinImageButton
                     src={getCheckinImageDisplayUrl(checkin.image_url)}
-                    alt=""
-                    className="h-14 w-14 rounded-lg object-cover shrink-0"
+                    alt={checkin.title}
+                    compact
                   />
                 )}
                 <div className="flex-1 min-w-0">

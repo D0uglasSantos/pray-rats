@@ -1,8 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { startOfWeek, startOfMonth } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
+import { mapActionError } from "@/lib/errors/map-action-error";
+import {
+  getPostgresMonthStartISO,
+  getPostgresWeekStartISO,
+} from "@/lib/postgres-dates";
 import type { ActionResult } from "@/actions/auth";
 import type { GroupRanking, PeriodType } from "@/types/database";
 
@@ -23,7 +27,7 @@ export async function getRanking(
   }
 
   if (period === "weekly") {
-    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString();
+    const weekStart = getPostgresWeekStartISO();
 
     const { data } = await supabase
       .from("weekly_group_rankings")
@@ -35,7 +39,7 @@ export async function getRanking(
     return (data as GroupRanking[]) ?? [];
   }
 
-  const monthStart = startOfMonth(new Date()).toISOString();
+  const monthStart = getPostgresMonthStartISO();
 
   const { data } = await supabase
     .from("monthly_group_rankings")
@@ -80,7 +84,7 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
     .eq("id", user.id);
 
   if (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: mapActionError(error, { context: "profile" }) };
   }
 
   revalidatePath("/profile");
@@ -115,7 +119,10 @@ export async function uploadAvatar(formData: FormData): Promise<ActionResult<{ u
     .upload(path, file, { upsert: true });
 
   if (uploadError) {
-    return { success: false, error: uploadError.message };
+    return {
+      success: false,
+      error: mapActionError(uploadError, { context: "upload" }),
+    };
   }
 
   const {

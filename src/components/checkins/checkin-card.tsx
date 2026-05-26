@@ -4,6 +4,7 @@ import { ptBR } from "date-fns/locale";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { CheckinImageButton } from "@/components/checkins/checkin-image-button";
 import { getCheckinImageDisplayUrl } from "@/lib/checkin-image-url";
 import { memberProfilePath } from "@/lib/member-profile-path";
 
@@ -79,11 +80,9 @@ export function CheckinCard({ checkin, hideProfileLink }: CheckinCardProps) {
       </div>
 
       {checkin.image_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <CheckinImageButton
           src={getCheckinImageDisplayUrl(checkin.image_url)}
-          alt=""
-          className="w-full h-48 object-cover rounded-xl"
+          alt={`Foto de ${checkin.title}`}
         />
       )}
     </Card>

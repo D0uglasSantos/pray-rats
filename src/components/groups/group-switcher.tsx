@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { ChevronDown } from "lucide-react";
 import { setActiveGroup } from "@/actions/auth";
+import { useToast } from "@/components/ui/toast";
 import type { GroupWithRole } from "@/types/database";
 import { cn } from "@/lib/utils/cn";
 
@@ -16,6 +17,7 @@ export function GroupSwitcher({
   variant?: "dark" | "light";
 }) {
   const [isPending, startTransition] = useTransition();
+  const { showToast } = useToast();
 
   if (groups.length <= 1) {
     const group = groups[0];
@@ -39,7 +41,12 @@ export function GroupSwitcher({
         value={activeGroupId ?? groups[0]?.id ?? ""}
         onChange={(e) => {
           startTransition(async () => {
-            await setActiveGroup(e.target.value);
+            const result = await setActiveGroup(e.target.value);
+            if (result.success) {
+              showToast("Grupo alterado.", "success");
+            } else {
+              showToast(result.error, "error");
+            }
           });
         }}
         className={cn(

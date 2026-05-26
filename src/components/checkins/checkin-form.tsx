@@ -8,6 +8,8 @@ import {
   checkinImageSizeError,
 } from "@/lib/checkin-image-limits";
 import { uploadCheckinImageFromClient } from "@/lib/upload-checkin-image";
+import { isSportActivity } from "@/lib/sport-activities";
+import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,17 +26,22 @@ interface CheckinFormProps {
 
 export function CheckinForm({ groupId, activities }: CheckinFormProps) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [selectedActivity, setSelectedActivity] = useState<ActivityType | null>(
     null,
   );
   const [visibility, setVisibility] = useState<CheckinVisibility>("public");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [durationValue, setDurationValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const activeActivities = activities.filter((a) => a.is_active);
+  const showDistanceField =
+    selectedActivity &&
+    (isSportActivity(selectedActivity.name) || durationValue.length > 0);
 
   function selectActivity(activity: ActivityType) {
     setSelectedActivity(activity);
@@ -43,7 +50,9 @@ export function CheckinForm({ groupId, activities }: CheckinFormProps) {
 
   function handleSelectImage(file: File) {
     if (file.size > CHECKIN_IMAGE_MAX_BYTES) {
-      setError(checkinImageSizeError());
+      const msg = checkinImageSizeError();
+      setError(msg);
+      showToast(msg, "error");
       return;
     }
     setImageFile(file);
@@ -61,7 +70,9 @@ export function CheckinForm({ groupId, activities }: CheckinFormProps) {
     e.preventDefault();
 
     if (!selectedActivity) {
-      setError("Selecione uma atividade.");
+      const msg = "Selecione uma atividade.";
+      setError(msg);
+      showToast(msg, "error");
       return;
     }
 
@@ -77,6 +88,7 @@ export function CheckinForm({ groupId, activities }: CheckinFormProps) {
         const uploadResult = await uploadCheckinImageFromClient(imageFile);
         if (!uploadResult.success) {
           setError(uploadResult.error);
+          showToast(uploadResult.error, "error");
           return;
         }
         formData.set("image_url", uploadResult.url);
@@ -86,9 +98,11 @@ export function CheckinForm({ groupId, activities }: CheckinFormProps) {
       if (result.success) {
         handleClearImage();
         setSuccess(true);
+        showToast("Check-in registrado com sucesso!", "success");
         setTimeout(() => router.push("/"), 1500);
       } else {
         setError(result.error);
+        showToast(result.error, "error");
       }
     });
   }
@@ -150,7 +164,20 @@ export function CheckinForm({ groupId, activities }: CheckinFormProps) {
             label="Duração em minutos (opcional)"
             placeholder="15"
             min={1}
+            value={durationValue}
+            onChange={(e) => setDurationValue(e.target.value)}
           />
+
+          {showDistanceField && (
+            <Input
+              name="distance_km"
+              type="number"
+              label="Distância em km (opcional)"
+              placeholder="5.2"
+              min={0.1}
+              step={0.1}
+            />
+          )}
 
           <ImageUpload
             preview={imagePreview}

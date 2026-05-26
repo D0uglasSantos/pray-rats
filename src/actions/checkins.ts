@@ -11,6 +11,9 @@ import { createClient } from "@/lib/supabase/server";
 import { evaluateCheckinLimits } from "@/lib/checkin-rules";
 import { calculateStreakFromCheckinDates } from "@/lib/streak";
 import { computeUserStatsFromCheckins, normalizeCheckinsForStats } from "@/lib/stats";
+import { computeUserRecords } from "@/lib/user-records";
+import { mapActionError } from "@/lib/errors/map-action-error";
+import { notifyGroupOfCheckin } from "@/actions/notifications";
 import type { ActionResult } from "@/actions/auth";
 import type { ActivityType, CheckinVisibility } from "@/types/database";
 
@@ -20,6 +23,7 @@ interface CreateCheckinInput {
   title: string;
   description?: string;
   durationMinutes?: number;
+  distanceKm?: number;
   visibility: CheckinVisibility;
   imageUrl?: string;
 }
@@ -116,6 +120,7 @@ export async function createCheckin(
       title,
       description: input.description?.trim() || null,
       duration_minutes: input.durationMinutes || null,
+      distance_km: input.distanceKm || null,
       image_url: input.imageUrl || null,
       visibility: input.visibility,
       points: validation.points,
@@ -125,19 +130,38 @@ export async function createCheckin(
     .single();
 
   if (error || !checkin) {
-    return { success: false, error: error?.message ?? "Erro ao salvar check-in." };
+    return {
+      success: false,
+      error: mapActionError(error, { context: "checkin" }),
+    };
   }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("name")
+    .eq("id", user.id)
+    .single();
+
+  await notifyGroupOfCheckin(
+    input.groupId,
+    user.id,
+    profile?.name ?? "Alguém",
+    title,
+    checkin.id,
+  );
 
   revalidatePath("/");
   revalidatePath("/feed");
   revalidatePath("/ranking");
   revalidatePath("/journey");
   revalidatePath("/group");
+  revalidatePath("/notifications");
 
   return { success: true, data: { checkinId: checkin.id } };
 }
 
 export async function createCheckinForm(formData: FormData): Promise<ActionResult<{ checkinId: string }>> {
+  const distanceRaw = formData.get("distance_km") as string;
   const result = await createCheckin({
     groupId: formData.get("group_id") as string,
     activityTypeId: formData.get("activity_type_id") as string,
@@ -146,6 +170,7 @@ export async function createCheckinForm(formData: FormData): Promise<ActionResul
     durationMinutes: formData.get("duration_minutes")
       ? Number(formData.get("duration_minutes"))
       : undefined,
+    distanceKm: distanceRaw ? Number(distanceRaw) : undefined,
     visibility: (formData.get("visibility") as CheckinVisibility) || "public",
     imageUrl: (formData.get("image_url") as string) || undefined,
   });
@@ -219,6 +244,40 @@ export async function getWeeklyPoints(userId: string, groupId: string): Promise<
     .lte("checked_in_at", endOfWeek(now, { weekStartsOn: 1 }).toISOString());
 
   return (data ?? []).reduce((sum, c) => sum + c.points, 0);
+}
+
+export async function getDailyPoints(userId: string, groupId: string): Promise<number> {
+  const supabase = await createClient();
+  const now = new Date();
+
+  const { data } = await supabase
+    .from("checkins")
+    .select("points")
+    .eq("user_id", userId)
+    .eq("group_id", groupId)
+    .eq("status", "valid")
+    .gte("checked_in_at", startOfDay(now).toISOString())
+    .lte("checked_in_at", endOfDay(now).toISOString());
+
+  return (data ?? []).reduce((sum, c) => sum + c.points, 0);
+}
+
+export async function getUserRecords(userId: string, groupId?: string) {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("checkins")
+    .select("checked_in_at, duration_minutes, distance_km, points")
+    .eq("user_id", userId)
+    .eq("status", "valid");
+
+  if (groupId) {
+    query = query.eq("group_id", groupId);
+  }
+
+  const { data: checkins } = await query;
+
+  return computeUserRecords(checkins ?? []);
 }
 
 export async function getUserStats(userId: string, groupId?: string) {

@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/actions/auth";
 import { getUserGroups } from "@/actions/groups";
+import { getUnreadCount } from "@/actions/notifications";
+import { getActiveGroupId } from "@/lib/active-group";
 import { AppShell } from "@/components/layout/app-shell";
 
 export default async function MainLayout({
@@ -14,5 +16,16 @@ export default async function MainLayout({
   const groups = await getUserGroups(user.id);
   if (groups.length === 0) redirect("/onboarding");
 
-  return <AppShell>{children}</AppShell>;
+  const activeGroupId = (await getActiveGroupId()) ?? groups[0]?.id ?? null;
+  const unreadCount = await getUnreadCount();
+
+  return (
+    <AppShell
+      groups={groups}
+      activeGroupId={activeGroupId}
+      unreadCount={unreadCount}
+    >
+      {children}
+    </AppShell>
+  );
 }

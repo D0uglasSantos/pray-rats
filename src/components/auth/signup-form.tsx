@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { signUp } from "@/actions/auth";
+import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -10,6 +11,7 @@ export function SignupForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
@@ -18,6 +20,7 @@ export function SignupForm() {
     const result = await signUp(formData);
     if (!result.success) {
       setError(result.error);
+      showToast(result.error, "error");
     } else if (result.needsEmailConfirmation) {
       setSuccess(
         "Conta criada! Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada e spam.",

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { joinGroupByCode } from "@/actions/groups";
+import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
@@ -12,6 +13,7 @@ export function JoinGroupForm({ initialCode }: { initialCode?: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { showToast } = useToast();
 
   function handleSubmit(formData: FormData) {
     const code = formData.get("invite_code") as string;
@@ -22,6 +24,7 @@ export function JoinGroupForm({ initialCode }: { initialCode?: string }) {
         router.push("/");
       } else {
         setError(result.error);
+        showToast(result.error, "error");
       }
     });
   }

@@ -7,6 +7,7 @@ import { generateInviteCode } from "@/lib/invite-code";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import { setActiveGroup, type ActionResult } from "@/actions/auth";
+import { mapActionError } from "@/lib/errors/map-action-error";
 
 export async function createGroup(formData: FormData): Promise<ActionResult<{ groupId: string }>> {
   const supabase = await createClient();
@@ -56,7 +57,13 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ gr
     .single();
 
   if (groupError || !group) {
-    return { success: false, error: groupError?.message ?? "Erro ao criar grupo." };
+    return {
+      success: false,
+      error: mapActionError(groupError, {
+        context: "group",
+        fallback: "Erro ao criar grupo.",
+      }),
+    };
   }
 
   const { error: memberError } = await supabase.from("group_members").insert({
@@ -66,7 +73,7 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ gr
   });
 
   if (memberError) {
-    return { success: false, error: memberError.message };
+    return { success: false, error: mapActionError(memberError, { context: "group" }) };
   }
 
   const activities = DEFAULT_ACTIVITIES.map((a) => ({
@@ -79,7 +86,7 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ gr
     .insert(activities);
 
   if (activitiesError) {
-    return { success: false, error: activitiesError.message };
+    return { success: false, error: mapActionError(activitiesError, { context: "group" }) };
   }
 
   await setActiveGroup(group.id);
@@ -110,7 +117,7 @@ export async function joinGroupByCode(code: string): Promise<ActionResult<{ grou
     if (error.message.includes("INVALID_INVITE_CODE")) {
       return { success: false, error: "Código de convite inválido." };
     }
-    return { success: false, error: error.message };
+    return { success: false, error: mapActionError(error, { context: "group" }) };
   }
 
   await setActiveGroup(groupId as string);
@@ -155,7 +162,7 @@ export async function updateGroup(
     .eq("id", groupId);
 
   if (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: mapActionError(error, { context: "group" }) };
   }
 
   revalidatePath(`/groups/${groupId}/admin`);
@@ -176,7 +183,7 @@ export async function removeMember(
     .eq("group_id", groupId);
 
   if (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: mapActionError(error, { context: "group" }) };
   }
 
   revalidatePath(`/groups/${groupId}/admin`);
@@ -227,7 +234,7 @@ export async function updateActivityType(
     .eq("group_id", groupId);
 
   if (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: mapActionError(error, { context: "group" }) };
   }
 
   revalidatePath(`/groups/${groupId}/admin`);

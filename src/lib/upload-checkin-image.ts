@@ -3,6 +3,7 @@ import {
   checkinImageSizeError,
 } from "@/lib/checkin-image-limits";
 import { prepareCheckinImageForUpload } from "@/lib/prepare-checkin-image";
+import { mapActionError } from "@/lib/errors/map-action-error";
 import { createClient } from "@/lib/supabase/client";
 
 export type UploadCheckinImageResult =
@@ -50,7 +51,10 @@ export async function uploadCheckinImageFromClient(
     });
 
   if (uploadError) {
-    return { success: false, error: uploadError.message };
+    return {
+      success: false,
+      error: mapActionError(uploadError, { context: "upload" }),
+    };
   }
 
   const {

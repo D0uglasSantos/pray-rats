@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Camera, X } from "lucide-react";
+import { Camera, ImageIcon, X } from "lucide-react";
 import { CHECKIN_IMAGE_MAX_SIZE_LABEL } from "@/lib/checkin-image-limits";
 import { cn } from "@/lib/utils/cn";
 
@@ -18,18 +18,20 @@ export function ImageUpload({
   onClear,
   disabled,
 }: ImageUploadProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) onSelect(file);
+    e.target.value = "";
   }
 
   return (
     <div>
       <p className="text-sm font-medium mb-2">Foto do momento (opcional)</p>
       <p className="text-xs text-muted mb-3">
-        Registre uma foto para comprovar sua atividade — aparece no feed se público.
+        Tire uma foto ou escolha da galeria — aparece no feed se público.
         Máximo de {CHECKIN_IMAGE_MAX_SIZE_LABEL} por imagem.
       </p>
 
@@ -52,24 +54,48 @@ export function ImageUpload({
           </button>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={disabled}
-          className={cn(
-            "w-full flex flex-col items-center justify-center gap-2 p-8",
-            "rounded-xl border-2 border-dashed border-border bg-surface-secondary",
-            "text-muted hover:border-primary/40 hover:text-primary transition-colors",
-            disabled && "opacity-50 pointer-events-none",
-          )}
-        >
-          <Camera className="h-8 w-8" />
-          <span className="text-sm font-medium">Tirar ou escolher foto</span>
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => cameraRef.current?.click()}
+            disabled={disabled}
+            className={cn(
+              "flex flex-col items-center justify-center gap-2 p-6",
+              "rounded-xl border-2 border-dashed border-border bg-surface-secondary",
+              "text-muted hover:border-primary/40 hover:text-primary transition-colors",
+              disabled && "opacity-50 pointer-events-none",
+            )}
+          >
+            <Camera className="h-7 w-7" />
+            <span className="text-sm font-medium">Tirar foto</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => galleryRef.current?.click()}
+            disabled={disabled}
+            className={cn(
+              "flex flex-col items-center justify-center gap-2 p-6",
+              "rounded-xl border-2 border-dashed border-border bg-surface-secondary",
+              "text-muted hover:border-primary/40 hover:text-primary transition-colors",
+              disabled && "opacity-50 pointer-events-none",
+            )}
+          >
+            <ImageIcon className="h-7 w-7" />
+            <span className="text-sm font-medium">Galeria</span>
+          </button>
+        </div>
       )}
 
       <input
-        ref={inputRef}
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleChange}
+      />
+      <input
+        ref={galleryRef}
         type="file"
         accept="image/*"
         className="hidden"

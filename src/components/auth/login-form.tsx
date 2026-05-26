@@ -3,12 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { signIn } from "@/actions/auth";
+import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
@@ -16,6 +18,7 @@ export function LoginForm() {
     const result = await signIn(formData);
     if (!result.success) {
       setError(result.error);
+      showToast(result.error, "error");
       setLoading(false);
     }
   }

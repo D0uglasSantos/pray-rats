@@ -1,15 +1,19 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { getSessionUser, signOut } from "@/actions/auth";
+import { getSessionUser } from "@/actions/auth";
+import { getActiveGroupId } from "@/lib/active-group";
 import { getUserGroups } from "@/actions/groups";
-import { getUserStats } from "@/actions/checkins";
+import { getUserStats, getUserRecords } from "@/actions/checkins";
 import { getProfile } from "@/actions/profile";
 import { PageHeader } from "@/components/layout/page-header";
 import { ProfileForm } from "@/components/profile/profile-form";
-import { Avatar } from "@/components/ui/avatar";
+import { AvatarUpload } from "@/components/profile/avatar-upload";
+import { UserRecordsSection } from "@/components/profile/user-records";
+import { GroupListItem } from "@/components/groups/group-list-item";
+import { PushNotificationToggle } from "@/components/profile/push-notification-toggle";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut } from "lucide-react";
+import { signOut } from "@/actions/auth";
 
 export default async function ProfilePage() {
   const user = await getSessionUser();
@@ -17,17 +21,18 @@ export default async function ProfilePage() {
 
   const profile = await getProfile(user.id);
   const groups = await getUserGroups(user.id);
+  const activeGroupId = (await getActiveGroupId()) ?? groups[0]?.id;
   const stats = await getUserStats(user.id);
+  const records = await getUserRecords(user.id, activeGroupId);
 
   return (
     <div className="space-y-6">
       <PageHeader title="Perfil" />
 
       <div className="flex flex-col items-center text-center">
-        <Avatar
-          src={profile?.avatar_url}
+        <AvatarUpload
+          avatarUrl={profile?.avatar_url ?? null}
           name={profile?.name ?? "Usuário"}
-          size="lg"
         />
         <h2 className="text-xl font-bold mt-3">{profile?.name}</h2>
         {profile?.bio && (
@@ -51,28 +56,21 @@ export default async function ProfilePage() {
         </Card>
       </div>
 
+      <UserRecordsSection records={records} />
+
       <ProfileForm profile={profile} />
 
+      <PushNotificationToggle />
+
       <Card padding="sm">
-        <p className="text-sm font-medium mb-2 flex items-center gap-2">
-          <Settings className="h-4 w-4" /> Meus grupos
-        </p>
-        <div className="space-y-2">
+        <p className="text-sm font-medium mb-2">Meus grupos</p>
+        <div className="space-y-1">
           {groups.map((g) => (
-            <div
-              key={g.id as string}
-              className="flex items-center justify-between py-2 border-b border-border last:border-0"
-            >
-              <span className="text-sm">{g.name as string}</span>
-              {(g as { role?: string }).role === "admin" && (
-                <Link
-                  href={`/groups/${g.id}/admin`}
-                  className="text-xs text-primary"
-                >
-                  Admin
-                </Link>
-              )}
-            </div>
+            <GroupListItem
+              key={g.id}
+              group={g}
+              isActive={g.id === activeGroupId}
+            />
           ))}
         </div>
       </Card>
