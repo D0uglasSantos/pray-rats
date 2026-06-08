@@ -65,6 +65,7 @@ export interface Checkin {
   checked_in_at: string;
   created_at: string;
   updated_at: string;
+  batch_id: string | null;
   profile?: Profile;
   activity_type?: ActivityType;
 }
@@ -99,10 +100,18 @@ export interface GroupRanking {
   last_checkin_at?: string;
   week_start?: string;
   month_start?: string;
+  rank_position?: number;
 }
 
 export interface GroupWithRole extends Group {
   role: MemberRole;
+}
+
+export interface UserFollow {
+  id: string;
+  follower_id: string;
+  following_id: string;
+  created_at: string;
 }
 
 export interface DashboardStats {
@@ -111,4 +120,18 @@ export interface DashboardStats {
   rankingPosition: number | null;
   currentStreak: number;
   totalCheckins: number;
+}
+
+export interface CheckinBatchEntry {
+  id: string;
+  group_id: string;
+  group_name: string;
+}
+
+export interface CheckinEditContext {
+  checkin: Checkin & {
+    activity_type?: ActivityType | ActivityType[] | null;
+  };
+  batchEntries: CheckinBatchEntry[];
+  activitiesByGroupId: Record<string, ActivityType[]>;
 }

@@ -9,7 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
 
-export function JoinGroupForm({ initialCode }: { initialCode?: string }) {
+export function JoinGroupForm({
+  initialCode,
+  backHref = "/onboarding",
+}: {
+  initialCode?: string;
+  backHref?: string;
+}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -21,7 +27,7 @@ export function JoinGroupForm({ initialCode }: { initialCode?: string }) {
       setError(null);
       const result = await joinGroupByCode(code);
       if (result.success) {
-        router.push("/");
+        router.push("/groups");
       } else {
         setError(result.error);
         showToast(result.error, "error");
@@ -33,7 +39,7 @@ export function JoinGroupForm({ initialCode }: { initialCode?: string }) {
     <div className="min-h-screen gradient-subtle px-4 py-8">
       <div className="max-w-sm mx-auto">
         <Link
-          href="/onboarding"
+          href={backHref}
           className="inline-flex items-center gap-1 text-sm text-muted mb-6"
         >
           <ArrowLeft className="h-4 w-4" /> Voltar

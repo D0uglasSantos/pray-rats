@@ -2,22 +2,24 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getFeedCheckins } from "@/actions/checkins";
+import type { FeedCheckin, FeedCursor } from "@/types/feed";
 
-type FeedCheckin = Awaited<ReturnType<typeof getFeedCheckins>>[number];
+const FEED_LIMIT = 20;
 
 export function useFeed(groupId?: string) {
   const [checkins, setCheckins] = useState<FeedCheckin[]>([]);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
+  const [nextCursor, setNextCursor] = useState<FeedCursor | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(
-    async (pageNum: number, append = false) => {
+    async (cursor: FeedCursor | null, append = false) => {
       if (!groupId) return;
       setLoading(true);
-      const data = await getFeedCheckins(groupId, pageNum, 10);
-      setCheckins((prev) => (append ? [...prev, ...data] : data));
-      setHasMore(data.length >= 10);
+      const result = await getFeedCheckins(groupId, cursor, FEED_LIMIT);
+      setCheckins((prev) => (append ? [...prev, ...result.items] : result.items));
+      setNextCursor(result.nextCursor);
+      setHasMore(result.hasMore);
       setLoading(false);
     },
     [groupId],
@@ -25,16 +27,15 @@ export function useFeed(groupId?: string) {
 
   useEffect(() => {
     if (groupId) {
-      setPage(0);
-      load(0);
+      setCheckins([]);
+      setNextCursor(null);
+      load(null);
     }
   }, [groupId, load]);
 
   const loadMore = useCallback(() => {
-    const next = page + 1;
-    setPage(next);
-    load(next, true);
-  }, [page, load]);
+    if (nextCursor) load(nextCursor, true);
+  }, [nextCursor, load]);
 
   return { checkins, loading, hasMore, loadMore };
 }

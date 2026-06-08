@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { savePushSubscription, removePushSubscription } from "@/actions/notifications";
 import { useToast } from "@/components/ui/toast";
 import { Card } from "@/components/ui/card";
@@ -23,6 +23,22 @@ export function PushNotificationToggle() {
   const { showToast } = useToast();
 
   const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+
+  useEffect(() => {
+    async function syncEnabledState() {
+      if (!("serviceWorker" in navigator)) return;
+
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        setEnabled(Boolean(subscription));
+      } catch {
+        setEnabled(false);
+      }
+    }
+
+    void syncEnabledState();
+  }, []);
 
   async function enablePush() {
     if (!vapidPublicKey) {

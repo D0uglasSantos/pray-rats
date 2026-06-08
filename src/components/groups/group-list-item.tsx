@@ -2,10 +2,12 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { setActiveGroup } from "@/actions/auth";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import type { GroupWithRole } from "@/types/database";
+import { Newspaper } from "lucide-react";
 
 interface GroupListItemProps {
   group: GroupWithRole;
@@ -38,7 +40,12 @@ export function GroupListItem({ group, isActive }: GroupListItemProps) {
           <p className="text-[10px] text-primary font-medium">Grupo ativo</p>
         )}
       </div>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1 shrink-0">
+        <Link href={`/feed?group=${group.id}`}>
+          <Button variant="ghost" size="sm" aria-label={`Feed de ${group.name}`}>
+            <Newspaper className="h-4 w-4" />
+          </Button>
+        </Link>
         {group.role === "admin" && (
           <Button
             variant="ghost"

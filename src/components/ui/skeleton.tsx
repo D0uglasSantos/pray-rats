@@ -34,3 +34,37 @@ export function DashboardSkeleton() {
     </div>
   );
 }
+
+export function JourneyPageSkeleton() {
+  return (
+    <div className="space-y-4 pb-6">
+      <Skeleton className="h-44 w-full rounded-3xl" />
+
+      <div className="grid grid-cols-3 gap-3">
+        <Skeleton className="h-24 rounded-2xl" />
+        <Skeleton className="h-24 rounded-2xl" />
+        <Skeleton className="h-24 rounded-2xl" />
+      </div>
+
+      <Skeleton className="h-64 w-full rounded-2xl" />
+
+      <div className="rounded-2xl bg-surface border border-border p-4 space-y-5">
+        <Skeleton className="h-5 w-40" />
+        {[80, 60, 45, 30].map((w) => (
+          <div key={w} className="space-y-2">
+            <div className="flex justify-between">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+            <div
+              className="h-2 rounded-full animate-pulse bg-surface-secondary"
+              style={{ width: `${w}%` }}
+            />
+          </div>
+        ))}
+      </div>
+
+      <Skeleton className="h-11 w-full rounded-xl" />
+    </div>
+  );
+}

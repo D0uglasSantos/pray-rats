@@ -21,7 +21,7 @@ export default async function GroupAdminPage({
   if (!user) redirect("/login");
 
   const isAdmin = await isUserAdmin(groupId, user.id);
-  if (!isAdmin) redirect("/");
+  if (!isAdmin) redirect("/home");
 
   const supabase = await createClient();
   const { data: group } = await supabase

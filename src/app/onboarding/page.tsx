@@ -11,7 +11,7 @@ export default async function OnboardingPage() {
   if (!user) redirect("/login");
 
   const groups = await getUserGroups(user.id);
-  if (groups.length > 0) redirect("/");
+  if (groups.length > 0) redirect("/home");
 
   return (
     <div className="min-h-screen gradient-subtle flex flex-col items-center justify-center px-4 py-12">

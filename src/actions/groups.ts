@@ -6,7 +6,8 @@ import { DEFAULT_ACTIVITIES } from "@/lib/constants/activities";
 import { generateInviteCode } from "@/lib/invite-code";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
-import { setActiveGroup, type ActionResult } from "@/actions/auth";
+import { clearActiveGroup, setActiveGroup, type ActionResult } from "@/actions/auth";
+import { notifyGroupOfNewMember } from "@/actions/notifications";
 import { mapActionError } from "@/lib/errors/map-action-error";
 
 export async function createGroup(formData: FormData): Promise<ActionResult<{ groupId: string }>> {
@@ -90,8 +91,8 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ gr
   }
 
   await setActiveGroup(group.id);
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/home");
+  redirect("/home");
 }
 
 export async function joinGroupByCode(code: string): Promise<ActionResult<{ groupId: string }>> {
@@ -121,7 +122,21 @@ export async function joinGroupByCode(code: string): Promise<ActionResult<{ grou
   }
 
   await setActiveGroup(groupId as string);
-  revalidatePath("/");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("name")
+    .eq("id", user.id)
+    .single();
+
+  await notifyGroupOfNewMember(
+    groupId as string,
+    user.id,
+    profile?.name ?? "Alguém",
+  );
+
+  revalidatePath("/home");
+  revalidatePath("/notifications");
   return { success: true, data: { groupId: groupId as string } };
 }
 
@@ -130,7 +145,7 @@ export async function joinGroupForm(formData: FormData): Promise<ActionResult> {
   const result = await joinGroupByCode(code);
 
   if (result.success) {
-    redirect("/");
+    redirect("/home");
   }
 
   return result;
@@ -166,7 +181,7 @@ export async function updateGroup(
   }
 
   revalidatePath(`/groups/${groupId}/admin`);
-  revalidatePath("/");
+  revalidatePath("/home");
   return { success: true };
 }
 
@@ -210,8 +225,18 @@ export async function leaveGroup(groupId: string): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
+  const remainingGroups = await getUserGroups(user.id);
   revalidatePath("/profile");
-  redirect("/onboarding");
+  revalidatePath("/groups");
+
+  if (remainingGroups.length === 0) {
+    await clearActiveGroup();
+    redirect("/onboarding");
+  }
+
+  const nextActive = remainingGroups[0];
+  await setActiveGroup(nextActive.id);
+  redirect("/groups");
 }
 
 export async function updateActivityType(
@@ -359,6 +384,16 @@ export async function getGroupActivities(groupId: string) {
   return data ?? [];
 }
 
+export async function getActivitiesByGroupIds(
+  groupIds: string[],
+): Promise<Record<string, Awaited<ReturnType<typeof getGroupActivities>>>> {
+  const entries = await Promise.all(
+    groupIds.map(async (groupId) => [groupId, await getGroupActivities(groupId)] as const),
+  );
+
+  return Object.fromEntries(entries);
+}
+
 export async function isUserInGroup(groupId: string, userId: string): Promise<boolean> {
   const supabase = await createClient();
 
@@ -370,6 +405,31 @@ export async function isUserInGroup(groupId: string, userId: string): Promise<bo
     .maybeSingle();
 
   return Boolean(data);
+}
+
+export async function getSharedGroupId(
+  viewerId: string,
+  targetUserId: string,
+): Promise<string | null> {
+  const supabase = await createClient();
+
+  const { data: viewerGroups } = await supabase
+    .from("group_members")
+    .select("group_id")
+    .eq("user_id", viewerId);
+
+  const groupIds = (viewerGroups ?? []).map((row) => row.group_id);
+  if (groupIds.length === 0) return null;
+
+  const { data } = await supabase
+    .from("group_members")
+    .select("group_id")
+    .eq("user_id", targetUserId)
+    .in("group_id", groupIds)
+    .limit(1)
+    .maybeSingle();
+
+  return data?.group_id ?? null;
 }
 
 export async function isUserAdmin(groupId: string, userId: string) {

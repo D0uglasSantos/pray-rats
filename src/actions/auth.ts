@@ -73,7 +73,7 @@ export async function signIn(formData: FormData): Promise<ActionResult> {
     return { success: false, error: "E-mail ou senha incorretos." };
   }
 
-  redirect("/");
+  redirect("/home");
 }
 
 export async function signOut(): Promise<void> {
@@ -130,6 +130,26 @@ export async function getSessionUser() {
 }
 
 export async function setActiveGroup(groupId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Faça login para continuar." };
+  }
+
+  const { data: membership } = await supabase
+    .from("group_members")
+    .select("id")
+    .eq("group_id", groupId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!membership) {
+    return { success: false, error: "Você não participa deste grupo." };
+  }
+
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, groupId, {
     httpOnly: true,
@@ -139,4 +159,9 @@ export async function setActiveGroup(groupId: string): Promise<ActionResult> {
   });
   revalidatePath("/", "layout");
   return { success: true };
+}
+
+export async function clearActiveGroup(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(COOKIE_NAME);
 }

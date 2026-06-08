@@ -28,19 +28,22 @@ export function RankingTabs({
     <div>
       <PageHeader title="Ranking" subtitle="Incentivo saudável entre amigos" />
 
-      <div className="flex gap-2 mb-6 p-1 bg-surface-secondary rounded-xl">
+      <div className="flex border-b border-border mb-6">
         {periods.map((p) => (
           <Link
             key={p.value}
             href={`${pathname}?period=${p.value}`}
             className={cn(
-              "flex-1 text-center py-2 rounded-lg text-sm font-medium transition-all",
+              "flex-1 text-center pb-3 text-sm font-medium transition-colors relative",
               activePeriod === p.value
-                ? "bg-surface text-primary shadow-sm"
-                : "text-muted",
+                ? "text-primary"
+                : "text-muted hover:text-foreground",
             )}
           >
             {p.label}
+            {activePeriod === p.value && (
+              <span className="absolute bottom-0 left-1/4 right-1/4 h-0.5 rounded-full bg-primary" />
+            )}
           </Link>
         ))}
       </div>

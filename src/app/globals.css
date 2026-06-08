@@ -61,3 +61,33 @@ body {
 .safe-bottom {
   padding-bottom: calc(5rem + var(--safe-bottom));
 }
+
+/* ── Animations ─────────────────────────────────────────── */
+@keyframes celebrate-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes celebrate-bounce {
+  0%, 100% { transform: translateY(0); }
+  40%       { transform: translateY(-10px); }
+  70%       { transform: translateY(-4px); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-celebrate-pop {
+  animation: celebrate-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-celebrate-bounce {
+  animation: celebrate-bounce 0.7s ease-in-out 0.3s both;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.35s ease-out forwards;
+}

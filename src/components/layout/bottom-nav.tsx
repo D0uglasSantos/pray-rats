@@ -6,10 +6,10 @@ import { Home, Plus, Trophy, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 const navItems = [
-  { href: "/", label: "Hoje", icon: Home },
+  { href: "/home", label: "Hoje", icon: Home },
   { href: "/group", label: "Grupo", icon: Users },
   { href: "/check-in", label: "Check-in", icon: Plus, highlight: true },
-  { href: "/ranking", label: "Classificações", icon: Trophy },
+  { href: "/ranking", label: "Ranking", icon: Trophy },
   { href: "/profile", label: "Perfil", icon: User },
 ];
 
@@ -21,8 +21,8 @@ export function BottomNav() {
       <div className="mx-auto max-w-lg flex items-end justify-around px-2 pt-2 pb-2">
         {navItems.map((item) => {
           const isActive =
-            item.href === "/"
-              ? pathname === "/"
+            item.href === "/home"
+              ? pathname === "/home"
               : item.href === "/ranking"
                 ? pathname.startsWith("/ranking")
                 : pathname.startsWith(item.href);

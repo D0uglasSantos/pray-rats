@@ -16,7 +16,12 @@ export function RankingPreview({
   rankings: GroupRanking[];
   currentUserId: string;
 }) {
-  const preview = rankings.slice(0, PREVIEW_LIMIT);
+  const topPreview = rankings.slice(0, PREVIEW_LIMIT);
+  const currentUserEntry = rankings.find((entry) => entry.user_id === currentUserId);
+  const preview =
+    currentUserEntry && !topPreview.some((entry) => entry.user_id === currentUserId)
+      ? [...topPreview.slice(0, PREVIEW_LIMIT - 1), currentUserEntry]
+      : topPreview;
 
   return (
     <section>
@@ -34,7 +39,7 @@ export function RankingPreview({
       ) : (
         <div className="space-y-2 mb-3">
           {preview.map((entry, index) => {
-            const position = index + 1;
+            const position = entry.rank_position ?? index + 1;
             const isCurrentUser = entry.user_id === currentUserId;
 
             return (

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Newspaper, Settings, Users } from "lucide-react";
+import { ChevronRight, Newspaper, Settings, Users } from "lucide-react";
 import { getSessionUser } from "@/actions/auth";
 import { getActiveGroupId } from "@/lib/active-group";
 import {
@@ -31,10 +31,13 @@ export default async function GroupPage() {
 
   const activeGroup = groups.find((g) => g.id === activeGroupId) ?? groups[0];
   const group = await getGroupById(activeGroup.id);
-  if (!group) redirect("/");
+  if (!group) redirect("/home");
 
   const members = await getGroupMemberStats(activeGroup.id);
-  const rankings = await getRanking(activeGroup.id, "general");
+  const rankings = await getRanking(activeGroup.id, "general", {
+    currentUserId: user.id,
+    limit: 20,
+  });
   const groupStats = await getGroupStats(activeGroup.id, group.start_date);
 
   return (
@@ -60,6 +63,18 @@ export default async function GroupPage() {
           <p className="text-xs text-muted mb-2">Grupo ativo</p>
           <GroupSwitcher groups={groups} activeGroupId={activeGroup.id} variant="light" />
         </Card>
+      )}
+
+      {groups.length > 1 && (
+        <Link href="/groups">
+          <Card padding="sm" className="flex items-center justify-between hover:ring-2 hover:ring-primary/20 transition-all">
+            <div>
+              <p className="font-semibold text-sm">Todos os meus grupos</p>
+              <p className="text-xs text-muted">{groups.length} grupos · feeds e detalhes</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted shrink-0" />
+          </Card>
+        </Link>
       )}
 
       <Card className="space-y-3">
@@ -91,7 +106,7 @@ export default async function GroupPage() {
         avgCheckinsPerDay={groupStats.avgCheckinsPerDay}
       />
 
-      <Link href="/feed">
+      <Link href={`/feed?group=${activeGroup.id}`}>
         <Card padding="sm" className="flex items-center gap-3 hover:ring-2 hover:ring-primary/20 transition-all">
           <Newspaper className="h-8 w-8 text-primary shrink-0" />
           <div>

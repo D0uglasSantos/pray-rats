@@ -19,7 +19,10 @@ export default async function RankingPage({
 
   const params = await searchParams;
   const period = (params.period as "weekly" | "monthly" | "general") ?? "general";
-  const rankings = await getRanking(activeGroupId, period);
+  const rankings = await getRanking(activeGroupId, period, {
+    currentUserId: user.id,
+    limit: 50,
+  });
 
   return (
     <RankingTabs

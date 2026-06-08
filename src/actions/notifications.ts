@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { mapActionError } from "@/lib/errors/map-action-error";
 import type { ActionResult } from "@/actions/auth";
 
@@ -115,6 +116,53 @@ export async function markAllAsRead(): Promise<ActionResult> {
   return { success: true };
 }
 
+export async function notifyGroupOfNewMember(
+  groupId: string,
+  memberId: string,
+  memberName: string,
+): Promise<void> {
+  const supabase = await createClient();
+
+  const { data: group } = await supabase
+    .from("groups")
+    .select("name")
+    .eq("id", groupId)
+    .single();
+
+  const { data: members } = await supabase
+    .from("group_members")
+    .select("user_id")
+    .eq("group_id", groupId)
+    .neq("user_id", memberId);
+
+  if (!members?.length) return;
+
+  const groupName = group?.name ?? "seu grupo";
+  const title = "Novo membro no grupo";
+  const body = `${memberName} entrou em ${groupName}`;
+  const link = "/group";
+
+  for (const member of members) {
+    const { error } = await supabase.rpc("create_notification", {
+      p_user_id: member.user_id,
+      p_type: "new_member",
+      p_title: title,
+      p_body: body,
+      p_link: link,
+    });
+
+    if (error && process.env.NODE_ENV === "development") {
+      console.error("[notifications] create_notification", error.message);
+    }
+
+    try {
+      await sendPushToUser(member.user_id, title, body, link);
+    } catch {
+      // Push is best-effort
+    }
+  }
+}
+
 export async function notifyGroupOfCheckin(
   groupId: string,
   authorId: string,
@@ -169,8 +217,17 @@ async function sendPushToUser(
 
   if (!privateKey || !publicKey || !subject) return;
 
-  const supabase = await createClient();
-  const { data: subscriptions } = await supabase
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[notifications] sendPushToUser", error);
+    }
+    return;
+  }
+
+  const { data: subscriptions } = await admin
     .from("push_subscriptions")
     .select("endpoint, p256dh, auth")
     .eq("user_id", userId);
@@ -182,17 +239,37 @@ async function sendPushToUser(
 
   const payload = JSON.stringify({ title, body, link });
 
-  await Promise.allSettled(
-    subscriptions.map((sub) =>
-      webpush.sendNotification(
-        {
-          endpoint: sub.endpoint,
-          keys: { p256dh: sub.p256dh, auth: sub.auth },
-        },
-        payload,
-      ),
-    ),
+  const results = await Promise.allSettled(
+    subscriptions.map(async (sub) => {
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint: sub.endpoint,
+            keys: { p256dh: sub.p256dh, auth: sub.auth },
+          },
+          payload,
+        );
+      } catch (error: unknown) {
+        const statusCode =
+          error && typeof error === "object" && "statusCode" in error
+            ? (error as { statusCode: number }).statusCode
+            : undefined;
+
+        if (statusCode === 404 || statusCode === 410) {
+          await admin.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+        }
+
+        throw error;
+      }
+    }),
   );
+
+  if (process.env.NODE_ENV === "development") {
+    const failed = results.filter((r) => r.status === "rejected").length;
+    if (failed > 0) {
+      console.warn(`[notifications] ${failed} push(es) falharam para user ${userId}`);
+    }
+  }
 }
 
 export async function savePushSubscription(subscription: {

@@ -6,6 +6,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import WebSocket from "ws";
 import { DEFAULT_ACTIVITIES } from "@/lib/constants/activities";
 import { evaluateCheckinLimits } from "@/lib/checkin-rules";
 import { filterPublicFeedCheckins } from "@/lib/checkin-rules";
@@ -16,26 +17,32 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const runIntegration = Boolean(SUPABASE_URL && SERVICE_KEY);
 
+function createNodeSupabaseClient(url: string, key: string) {
+  return createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    realtime: { transport: WebSocket as never },
+  });
+}
+
 describe.skipIf(!runIntegration)("Integração Supabase — fluxo completo", () => {
   let admin: SupabaseClient;
   let testUserId: string;
   let testEmail: string;
+  let testPassword: string;
   let groupId: string;
   let activityId: string;
   let publicCheckinId: string;
   let privateCheckinId: string;
 
   beforeAll(async () => {
-    admin = createClient(SUPABASE_URL!, SERVICE_KEY!, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    admin = createNodeSupabaseClient(SUPABASE_URL!, SERVICE_KEY!);
 
     testEmail = `test-${Date.now()}@pray-rats.test`;
-    const password = "testpass123";
+    testPassword = "testpass123";
 
     const { data: authData, error: authError } = await admin.auth.admin.createUser({
       email: testEmail,
-      password,
+      password: testPassword,
       email_confirm: true,
       user_metadata: { name: "Usuário Teste" },
     });
@@ -238,7 +245,10 @@ describe.skipIf(!runIntegration)("Integração Supabase — fluxo completo", () 
     const joinUserId = joinAuth.user!.id;
     await new Promise((r) => setTimeout(r, 300));
 
-    const userClient = createClient(SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+    const userClient = createNodeSupabaseClient(
+      SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
     const { error: signInError } = await userClient.auth.signInWithPassword({
       email: joinEmail,
       password: joinPassword,
@@ -268,5 +278,70 @@ describe.skipIf(!runIntegration)("Integração Supabase — fluxo completo", () 
 
     await admin.from("group_members").delete().eq("user_id", joinUserId);
     await admin.auth.admin.deleteUser(joinUserId);
+  });
+
+  it("8. create_checkin_safely evita race condition no limite diário", async () => {
+    const { data: activity, error: activityError } = await admin
+      .from("activity_types")
+      .insert({
+        group_id: groupId,
+        name: `Atividade concorrente ${Date.now()}`,
+        description: "Atividade para teste de concorrência da RPC",
+        points: 9,
+        daily_limit: 1,
+        weekly_limit: 1,
+        is_active: true,
+      })
+      .select("id")
+      .single();
+
+    expect(activityError).toBeNull();
+
+    const userClient = createNodeSupabaseClient(
+      SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+
+    const { error: signInError } = await userClient.auth.signInWithPassword({
+      email: testEmail,
+      password: testPassword,
+    });
+    expect(signInError).toBeNull();
+
+    const payload = {
+      group_id: groupId,
+      activity_type_id: activity!.id,
+      title: "Check-in concorrente",
+      description: "Teste de corrida",
+      duration_minutes: 15,
+      distance_km: 1.25,
+      visibility: "public" as const,
+      image_url: null,
+    };
+
+    const [resultA, resultB] = await Promise.all([
+      userClient.rpc("create_checkin_safely", payload),
+      userClient.rpc("create_checkin_safely", payload),
+    ]);
+
+    const results = [resultA, resultB];
+    const successCount = results.filter((result) => Boolean(result.data)).length;
+    const dailyLimitErrors = results.filter((result) =>
+      String(result.error?.message ?? "").includes("DAILY_LIMIT_REACHED"),
+    ).length;
+
+    expect(successCount).toBe(1);
+    expect(dailyLimitErrors).toBe(1);
+
+    const { count, error: countError } = await admin
+      .from("checkins")
+      .select("*", { count: "exact", head: true })
+      .eq("group_id", groupId)
+      .eq("user_id", testUserId)
+      .eq("activity_type_id", activity!.id)
+      .eq("status", "valid");
+
+    expect(countError).toBeNull();
+    expect(count).toBe(1);
   });
 });

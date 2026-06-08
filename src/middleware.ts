@@ -1,7 +1,7 @@
 import { updateSession } from "@/lib/supabase/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 
-const publicRoutes = ["/login", "/signup", "/forgot-password", "/auth/callback"];
+const publicRoutes = ["/", "/login", "/signup", "/forgot-password", "/auth/callback"];
 const authRoutes = ["/login", "/signup", "/forgot-password"];
 
 export async function middleware(request: NextRequest) {
@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
 
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/home";
     return NextResponse.redirect(url);
   }
 

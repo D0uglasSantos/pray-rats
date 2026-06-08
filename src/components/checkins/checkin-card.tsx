@@ -42,7 +42,7 @@ export function CheckinCard({ checkin, hideProfileLink }: CheckinCardProps) {
         <p className="font-semibold text-foreground truncate">
           {profile?.name ?? "Usuário"}
         </p>
-        <p className="text-xs text-muted">
+        <p className="text-xs text-muted/70">
           {formatDistanceToNow(new Date(checkin.checked_in_at), {
             addSuffix: true,
             locale: ptBR,

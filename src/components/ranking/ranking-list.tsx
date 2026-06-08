@@ -24,7 +24,7 @@ export function RankingList({
   return (
     <div className="space-y-2">
       {rankings.map((entry, index) => {
-        const position = index + 1;
+        const position = entry.rank_position ?? index + 1;
         const isCurrentUser = entry.user_id === currentUserId;
 
         return (
