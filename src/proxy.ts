@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 const publicRoutes = ["/", "/login", "/signup", "/forgot-password", "/auth/callback"];
 const authRoutes = ["/login", "/signup", "/forgot-password"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { supabaseResponse, user } = await updateSession(request);
   const { pathname } = request.nextUrl;
 
@@ -30,6 +30,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|sw.js|push-handler.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

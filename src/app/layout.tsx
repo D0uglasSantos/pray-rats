@@ -8,7 +8,12 @@ const geist = Geist({
   subsets: ["latin"],
 });
 
+const appUrl =
+  process.env.NEXT_PUBLIC_APP_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(appUrl),
   title: "PrayRats — Constância espiritual em grupo",
   description:
     "Registre momentos de fé, acompanhe sua caminhada e incentive seus amigos na jornada cristã.",
