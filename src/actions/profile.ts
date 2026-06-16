@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getCachedRankingTop } from "@/lib/cached-group-data";
+import { isUserGroupMember } from "@/lib/group-access";
 import { mapActionError } from "@/lib/errors/map-action-error";
 import {
   getPostgresMonthStartISO,
@@ -82,24 +84,39 @@ export async function getRanking(
   const source = getRankingSource(period);
   const limit = Math.max(1, options.limit ?? RANKING_LIMIT_DEFAULT);
 
-  let topQuery = supabase
-    .from(source.table)
-    .select(RANKING_FIELDS)
-    .eq("group_id", groupId)
-    .order("total_points", { ascending: false })
-    .order("total_checkins", { ascending: false })
-    .order("user_id", { ascending: true })
-    .limit(limit);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (source.periodFilter) {
-    topQuery = topQuery.eq(source.periodFilter.column, source.periodFilter.value);
+  if (user && !(await isUserGroupMember(supabase, groupId, user.id))) {
+    return [];
   }
 
-  const { data } = await topQuery;
-  const ranking = ((data as GroupRanking[]) ?? []).map((entry, index) => ({
-    ...entry,
-    rank_position: index + 1,
-  }));
+  const cachedTop = await getCachedRankingTop(groupId, period, limit);
+  let ranking: GroupRanking[];
+
+  if (cachedTop) {
+    ranking = cachedTop;
+  } else {
+    let topQuery = supabase
+      .from(source.table)
+      .select(RANKING_FIELDS)
+      .eq("group_id", groupId)
+      .order("total_points", { ascending: false })
+      .order("total_checkins", { ascending: false })
+      .order("user_id", { ascending: true })
+      .limit(limit);
+
+    if (source.periodFilter) {
+      topQuery = topQuery.eq(source.periodFilter.column, source.periodFilter.value);
+    }
+
+    const { data } = await topQuery;
+    ranking = ((data as GroupRanking[]) ?? []).map((entry, index) => ({
+      ...entry,
+      rank_position: index + 1,
+    }));
+  }
 
   if (!options.currentUserId) return ranking;
 

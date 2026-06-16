@@ -9,6 +9,9 @@ import {
   endOfWeek,
 } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
+import { getCachedFeedFirstPage } from "@/lib/cached-group-data";
+import { isUserGroupMember } from "@/lib/group-access";
+import { revalidateGroupDataCaches } from "@/lib/server-cache";
 import { calculateStreakFromCheckinDates } from "@/lib/streak";
 import { computeUserStatsFromCheckins, normalizeCheckinsForStats } from "@/lib/stats";
 import { computeUserRecords } from "@/lib/user-records";
@@ -19,6 +22,7 @@ import {
   parseGroupIdsFromForm,
 } from "@/lib/checkin-groups";
 import { parseCheckedInAtInput } from "@/lib/checkin-datetime";
+import { scheduleRankingRefresh } from "@/lib/ranking-cache";
 import { statsLookbackDate, streakLookbackDate } from "@/lib/stats-lookback";
 import { notifyGroupOfCheckin } from "@/actions/notifications";
 import { getActivitiesByGroupIds, getUserGroups } from "@/actions/groups";
@@ -84,7 +88,7 @@ function mapCheckinRpcError(error: { message?: string } | null): string {
   return mapActionError(error, { context: "checkin" });
 }
 
-function revalidateCheckinPaths() {
+function revalidateCheckinPaths(groupIds: string[] = []) {
   revalidatePath("/home");
   revalidatePath("/feed");
   revalidatePath("/ranking");
@@ -93,6 +97,8 @@ function revalidateCheckinPaths() {
   revalidatePath("/groups");
   revalidatePath("/check-in");
   revalidatePath("/notifications");
+  revalidateGroupDataCaches(groupIds);
+  scheduleRankingRefresh();
 }
 
 async function createCheckinInGroup(
@@ -224,7 +230,7 @@ export async function createCheckinsForGroups(
     };
   }
 
-  revalidateCheckinPaths();
+  revalidateCheckinPaths(targetGroupIds);
 
   return {
     success: true,
@@ -434,7 +440,7 @@ export async function updateCheckinsForGroups(
     };
   }
 
-  revalidateCheckinPaths();
+  revalidateCheckinPaths(targetGroupIds);
   revalidatePath(`/check-in/${input.checkinId}/edit`);
 
   return {
@@ -537,7 +543,7 @@ export async function deleteCheckinsForGroups(
     };
   }
 
-  revalidateCheckinPaths();
+  revalidateCheckinPaths(targetGroupIds);
 
   return {
     success: true,
@@ -579,6 +585,18 @@ export async function getFeedCheckins(
   limit = FEED_LIMIT,
 ): Promise<FeedResult> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user && !(await isUserGroupMember(supabase, groupId, user.id))) {
+    return { items: [], hasMore: false, nextCursor: null };
+  }
+
+  if (cursor === null) {
+    const cached = await getCachedFeedFirstPage(groupId, limit);
+    if (cached) return cached;
+  }
 
   let query = supabase
     .from("checkins")

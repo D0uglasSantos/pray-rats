@@ -368,4 +368,52 @@ describe.skipIf(!runIntegration)("Integração Supabase — fluxo completo", () 
     expect(data).toBeNull();
     expect(error).toBeTruthy();
   });
+
+  it("10. refresh_ranking_views popula group_rankings para membro", async () => {
+    const { error: refreshError } = await admin.rpc("refresh_ranking_views");
+    if (refreshError?.message?.includes("Could not find the function")) {
+      return;
+    }
+    expect(refreshError).toBeNull();
+
+    const userClient = createNodeSupabaseClient(
+      SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+
+    const { error: signInError } = await userClient.auth.signInWithPassword({
+      email: testEmail,
+      password: testPassword,
+    });
+    expect(signInError).toBeNull();
+
+    const { data, error } = await userClient
+      .from("group_rankings")
+      .select("total_points, total_checkins")
+      .eq("group_id", groupId)
+      .eq("user_id", testUserId)
+      .single();
+
+    expect(error).toBeNull();
+    expect(data!.total_points).toBeGreaterThanOrEqual(25);
+    expect(data!.total_checkins).toBeGreaterThanOrEqual(2);
+  });
+
+  it("11. refresh_ranking_views bloqueada para usuário autenticado", async () => {
+    const userClient = createNodeSupabaseClient(
+      SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+
+    const { error: signInError } = await userClient.auth.signInWithPassword({
+      email: testEmail,
+      password: testPassword,
+    });
+    expect(signInError).toBeNull();
+
+    const { data, error } = await userClient.rpc("refresh_ranking_views");
+
+    expect(data).toBeNull();
+    expect(error).toBeTruthy();
+  });
 });

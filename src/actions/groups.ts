@@ -7,6 +7,8 @@ import { DEFAULT_ACTIVITIES } from "@/lib/constants/activities";
 import { generateInviteCode } from "@/lib/invite-code";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
+import { getCachedGroupTotalCheckins } from "@/lib/cached-group-data";
+import { isUserGroupMember } from "@/lib/group-access";
 import { clearActiveGroup, setActiveGroup, type ActionResult } from "@/actions/auth";
 import { notifyGroupOfNewMember } from "@/actions/notifications";
 import { mapActionError } from "@/lib/errors/map-action-error";
@@ -303,14 +305,26 @@ export async function getGroupStats(
   startDate: string | null,
 ) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const { data: rankings } = await supabase
-    .from("group_rankings")
-    .select("total_checkins")
-    .eq("group_id", groupId);
+  if (user && !(await isUserGroupMember(supabase, groupId, user.id))) {
+    return { totalCheckins: 0, avgCheckinsPerDay: 0 };
+  }
 
-  const totalCheckins =
-    rankings?.reduce((sum, row) => sum + row.total_checkins, 0) ?? 0;
+  const cachedTotal = await getCachedGroupTotalCheckins(groupId);
+  let totalCheckins = cachedTotal;
+
+  if (totalCheckins === null) {
+    const { data: rankings } = await supabase
+      .from("group_rankings")
+      .select("total_checkins")
+      .eq("group_id", groupId);
+
+    totalCheckins =
+      rankings?.reduce((sum, row) => sum + row.total_checkins, 0) ?? 0;
+  }
 
   const challengeStart = startDate
     ? startOfDay(new Date(startDate))
