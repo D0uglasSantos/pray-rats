@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { getAppUrl } from "@/lib/app-url";
+import { getAuthCallbackUrl } from "@/lib/app-url";
 import { mapActionError } from "@/lib/errors/map-action-error";
 import { authRateLimitMessage, checkAuthRateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -120,7 +120,7 @@ export async function resetPassword(formData: FormData): Promise<ActionResult> {
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${getAppUrl()}/auth/callback?next=/profile`,
+    redirectTo: getAuthCallbackUrl("/reset-password"),
   });
 
   if (error) {
