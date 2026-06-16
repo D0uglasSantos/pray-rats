@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils/cn";
 
 function getPasswordStrength(pw: string): 0 | 1 | 2 | 3 {
   if (pw.length === 0) return 0;
-  if (pw.length < 6) return 1;
+  if (pw.length < 8) return 1;
   const hasUpper = /[A-Z]/.test(pw);
   const hasNumber = /[0-9]/.test(pw);
   const hasSpecial = /[^A-Za-z0-9]/.test(pw);
@@ -69,7 +69,7 @@ export function SignupForm() {
           name="password"
           type="password"
           label="Senha"
-          placeholder="Mínimo 6 caracteres"
+          placeholder="Mínimo 8 caracteres"
           required
           minLength={6}
           autoComplete="new-password"
@@ -93,7 +93,7 @@ export function SignupForm() {
             </div>
             <p className="text-xs text-muted">
               Senha {strengthConfig[strength]?.label?.toLowerCase()}
-              {strength === 1 && " — use ao menos 6 caracteres"}
+              {strength === 1 && " — use ao menos 8 caracteres"}
               {strength === 2 && " — adicione maiúsculas ou símbolos para fortalecer"}
             </p>
           </div>

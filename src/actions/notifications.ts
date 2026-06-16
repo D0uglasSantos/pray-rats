@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mapActionError } from "@/lib/errors/map-action-error";
@@ -42,7 +43,7 @@ export async function getNotifications(limit = 50): Promise<Notification[]> {
   return (data as Notification[]) ?? [];
 }
 
-export async function getUnreadCount(): Promise<number> {
+export const getUnreadCount = cache(async (): Promise<number> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -58,7 +59,7 @@ export async function getUnreadCount(): Promise<number> {
 
   if (error) return 0;
   return count ?? 0;
-}
+});
 
 export async function markAsRead(notificationId: string): Promise<ActionResult> {
   const supabase = await createClient();
@@ -116,6 +117,36 @@ export async function markAllAsRead(): Promise<ActionResult> {
   return { success: true };
 }
 
+async function createNotificationForUser(
+  userId: string,
+  type: string,
+  title: string,
+  body: string,
+  link: string,
+): Promise<void> {
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[notifications] createNotificationForUser", error);
+    }
+    return;
+  }
+
+  const { error } = await admin.rpc("create_notification", {
+    p_user_id: userId,
+    p_type: type,
+    p_title: title,
+    p_body: body,
+    p_link: link,
+  });
+
+  if (error && process.env.NODE_ENV === "development") {
+    console.error("[notifications] create_notification", error.message);
+  }
+}
+
 export async function notifyGroupOfNewMember(
   groupId: string,
   memberId: string,
@@ -143,17 +174,13 @@ export async function notifyGroupOfNewMember(
   const link = "/group";
 
   for (const member of members) {
-    const { error } = await supabase.rpc("create_notification", {
-      p_user_id: member.user_id,
-      p_type: "new_member",
-      p_title: title,
-      p_body: body,
-      p_link: link,
-    });
-
-    if (error && process.env.NODE_ENV === "development") {
-      console.error("[notifications] create_notification", error.message);
-    }
+    await createNotificationForUser(
+      member.user_id,
+      "new_member",
+      title,
+      body,
+      link,
+    );
 
     try {
       await sendPushToUser(member.user_id, title, body, link);
@@ -185,17 +212,13 @@ export async function notifyGroupOfCheckin(
   const link = "/feed";
 
   for (const member of members) {
-    const { error } = await supabase.rpc("create_notification", {
-      p_user_id: member.user_id,
-      p_type: "new_checkin",
-      p_title: title,
-      p_body: body,
-      p_link: link,
-    });
-
-    if (error && process.env.NODE_ENV === "development") {
-      console.error("[notifications] create_notification", error.message);
-    }
+    await createNotificationForUser(
+      member.user_id,
+      "new_checkin",
+      title,
+      body,
+      link,
+    );
 
     try {
       await sendPushToUser(member.user_id, title, body, link);

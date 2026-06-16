@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { DEFAULT_ACTIVITIES } from "@/lib/constants/activities";
 import { generateInviteCode } from "@/lib/invite-code";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
@@ -268,7 +269,7 @@ export async function updateActivityType(
 
 import type { GroupWithRole } from "@/types/database";
 
-export async function getUserGroups(userId: string): Promise<GroupWithRole[]> {
+export const getUserGroups = cache(async (userId: string): Promise<GroupWithRole[]> => {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -282,7 +283,7 @@ export async function getUserGroups(userId: string): Promise<GroupWithRole[]> {
     ...(row.groups as unknown as GroupWithRole),
     role: row.role as GroupWithRole["role"],
   }));
-}
+});
 
 export async function getGroupById(groupId: string) {
   const supabase = await createClient();
@@ -387,11 +388,26 @@ export async function getGroupActivities(groupId: string) {
 export async function getActivitiesByGroupIds(
   groupIds: string[],
 ): Promise<Record<string, Awaited<ReturnType<typeof getGroupActivities>>>> {
-  const entries = await Promise.all(
-    groupIds.map(async (groupId) => [groupId, await getGroupActivities(groupId)] as const),
-  );
+  if (groupIds.length === 0) return {};
 
-  return Object.fromEntries(entries);
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("activity_types")
+    .select("*")
+    .in("group_id", groupIds)
+    .order("name");
+
+  if (error || !data) return {};
+
+  const grouped: Record<string, typeof data> = {};
+  for (const groupId of groupIds) {
+    grouped[groupId] = [];
+  }
+  for (const activity of data) {
+    grouped[activity.group_id]?.push(activity);
+  }
+
+  return grouped;
 }
 
 export async function isUserInGroup(groupId: string, userId: string): Promise<boolean> {

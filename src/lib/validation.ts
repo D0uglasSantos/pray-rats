@@ -1,3 +1,18 @@
+const MIN_PASSWORD_LENGTH = 8;
+
+export function validatePassword(password?: string): { valid: boolean; error?: string } {
+  if (!password) {
+    return { valid: false, error: "Informe uma senha." };
+  }
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return {
+      valid: false,
+      error: `A senha deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`,
+    };
+  }
+  return { valid: true };
+}
+
 export function validateSignUpInput(input: {
   name?: string;
   email?: string;
@@ -6,8 +21,9 @@ export function validateSignUpInput(input: {
   if (!input.name?.trim() || !input.email?.trim() || !input.password) {
     return { valid: false, error: "Preencha todos os campos." };
   }
-  if (input.password.length < 6) {
-    return { valid: false, error: "A senha deve ter pelo menos 6 caracteres." };
+  const passwordCheck = validatePassword(input.password);
+  if (!passwordCheck.valid) {
+    return passwordCheck;
   }
   return { valid: true };
 }

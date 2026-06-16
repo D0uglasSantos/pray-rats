@@ -344,4 +344,28 @@ describe.skipIf(!runIntegration)("Integração Supabase — fluxo completo", () 
     expect(countError).toBeNull();
     expect(count).toBe(1);
   });
+
+  it("9. create_notification bloqueada para usuário autenticado comum", async () => {
+    const userClient = createNodeSupabaseClient(
+      SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+
+    const { error: signInError } = await userClient.auth.signInWithPassword({
+      email: testEmail,
+      password: testPassword,
+    });
+    expect(signInError).toBeNull();
+
+    const { data, error } = await userClient.rpc("create_notification", {
+      p_user_id: testUserId,
+      p_type: "abuse_test",
+      p_title: "Spam",
+      p_body: "Tentativa de abuso",
+      p_link: "/feed",
+    });
+
+    expect(data).toBeNull();
+    expect(error).toBeTruthy();
+  });
 });

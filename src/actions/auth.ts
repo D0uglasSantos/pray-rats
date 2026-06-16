@@ -3,10 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { getAppUrl } from "@/lib/app-url";
 import { mapActionError } from "@/lib/errors/map-action-error";
+import { authRateLimitMessage, checkAuthRateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { validatePassword } from "@/lib/validation";
 import { COOKIE_NAME } from "@/lib/active-group";
 
 export type ActionResult<T = void> =
@@ -26,8 +29,14 @@ export async function signUp(formData: FormData): Promise<SignUpResult> {
     return { success: false, error: "Preencha todos os campos." };
   }
 
-  if (password.length < 6) {
-    return { success: false, error: "A senha deve ter pelo menos 6 caracteres." };
+  const passwordCheck = validatePassword(password);
+  if (!passwordCheck.valid) {
+    return { success: false, error: passwordCheck.error! };
+  }
+
+  const allowed = await checkAuthRateLimit("signUp", email);
+  if (!allowed) {
+    return { success: false, error: authRateLimitMessage("signUp") };
   }
 
   const admin = createAdminClient();
@@ -70,6 +79,11 @@ export async function signIn(formData: FormData): Promise<ActionResult> {
     return { success: false, error: "Preencha e-mail e senha." };
   }
 
+  const allowed = await checkAuthRateLimit("signIn", email);
+  if (!allowed) {
+    return { success: false, error: authRateLimitMessage("signIn") };
+  }
+
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
@@ -100,6 +114,11 @@ export async function resetPassword(formData: FormData): Promise<ActionResult> {
     return { success: false, error: "Informe seu e-mail." };
   }
 
+  const allowed = await checkAuthRateLimit("resetPassword", email);
+  if (!allowed) {
+    return { success: false, error: authRateLimitMessage("resetPassword") };
+  }
+
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${getAppUrl()}/auth/callback?next=/profile`,
   });
@@ -121,8 +140,9 @@ export async function updatePassword(formData: FormData): Promise<ActionResult> 
   const supabase = await createClient();
   const password = formData.get("password") as string;
 
-  if (!password || password.length < 6) {
-    return { success: false, error: "A senha deve ter pelo menos 6 caracteres." };
+  const passwordCheck = validatePassword(password);
+  if (!passwordCheck.valid) {
+    return { success: false, error: passwordCheck.error! };
   }
 
   const { error } = await supabase.auth.updateUser({ password });
@@ -137,13 +157,13 @@ export async function updatePassword(formData: FormData): Promise<ActionResult> 
   return { success: true };
 }
 
-export async function getSessionUser() {
+export const getSessionUser = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
-}
+});
 
 export async function setActiveGroup(groupId: string): Promise<ActionResult> {
   const supabase = await createClient();

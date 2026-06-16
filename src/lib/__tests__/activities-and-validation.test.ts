@@ -55,7 +55,7 @@ describe("validateSignUpInput", () => {
       validateSignUpInput({
         name: "Ana",
         email: "a@b.com",
-        password: "123456",
+        password: "12345678",
       }).valid,
     ).toBe(true);
   });

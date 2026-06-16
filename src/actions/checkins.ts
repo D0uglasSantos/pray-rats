@@ -19,6 +19,7 @@ import {
   parseGroupIdsFromForm,
 } from "@/lib/checkin-groups";
 import { parseCheckedInAtInput } from "@/lib/checkin-datetime";
+import { statsLookbackDate, streakLookbackDate } from "@/lib/stats-lookback";
 import { notifyGroupOfCheckin } from "@/actions/notifications";
 import { getActivitiesByGroupIds, getUserGroups } from "@/actions/groups";
 import type { ActionResult } from "@/actions/auth";
@@ -635,6 +636,7 @@ export async function calculateStreak(userId: string, groupId: string): Promise<
     .eq("user_id", userId)
     .eq("group_id", groupId)
     .eq("status", "valid")
+    .gte("checked_in_at", streakLookbackDate().toISOString())
     .order("checked_in_at", { ascending: false });
 
   if (!checkins?.length) return 0;
@@ -683,7 +685,8 @@ export async function getUserRecords(userId: string, groupId?: string) {
     .from("checkins")
     .select("checked_in_at, duration_minutes, distance_km, points")
     .eq("user_id", userId)
-    .eq("status", "valid");
+    .eq("status", "valid")
+    .gte("checked_in_at", statsLookbackDate().toISOString());
 
   if (groupId) {
     query = query.eq("group_id", groupId);
@@ -704,6 +707,7 @@ export async function getUserStats(userId: string, groupId?: string) {
     )
     .eq("user_id", userId)
     .eq("status", "valid")
+    .gte("checked_in_at", statsLookbackDate().toISOString())
     .order("checked_in_at", { ascending: false });
 
   if (groupId) {
