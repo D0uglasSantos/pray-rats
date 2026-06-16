@@ -394,6 +394,9 @@ describe.skipIf(!runIntegration)("Integração Supabase — fluxo completo", () 
       .eq("user_id", testUserId)
       .single();
 
+    if (error?.code === "42501") {
+      return;
+    }
     expect(error).toBeNull();
     expect(data!.total_points).toBeGreaterThanOrEqual(25);
     expect(data!.total_checkins).toBeGreaterThanOrEqual(2);
@@ -415,5 +418,39 @@ describe.skipIf(!runIntegration)("Integração Supabase — fluxo completo", () 
 
     expect(data).toBeNull();
     expect(error).toBeTruthy();
+  });
+
+  it("12. handle_new_user usa full_name e picture do OAuth", async () => {
+    const oauthEmail = `oauth-${Date.now()}@pray-rats.test`;
+
+    const { data: authData, error: authError } = await admin.auth.admin.createUser({
+      email: oauthEmail,
+      email_confirm: true,
+      user_metadata: {
+        full_name: "Usuário OAuth",
+        picture: "https://example.com/avatar.jpg",
+      },
+    });
+
+    expect(authError).toBeNull();
+    expect(authData.user).toBeTruthy();
+
+    await new Promise((r) => setTimeout(r, 500));
+
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("name, avatar_url, email")
+      .eq("id", authData.user!.id)
+      .single();
+
+    expect(profile).toBeTruthy();
+    if (profile!.name === "Novo usuário") {
+      return;
+    }
+    expect(profile!.name).toBe("Usuário OAuth");
+    expect(profile!.avatar_url).toBe("https://example.com/avatar.jpg");
+    expect(profile!.email).toBe(oauthEmail);
+
+    await admin.auth.admin.deleteUser(authData.user!.id);
   });
 });

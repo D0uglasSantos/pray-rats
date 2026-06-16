@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { signUp } from "@/actions/auth";
+import { AuthEmailDivider } from "@/components/auth/auth-email-divider";
+import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,7 +49,10 @@ export function SignupForm() {
   }
 
   return (
-    <form action={handleSubmit} className="space-y-4">
+    <>
+      <SocialAuthButtons />
+      <AuthEmailDivider />
+      <form action={handleSubmit} className="space-y-4">
       <Input
         name="name"
         type="text"
@@ -112,5 +117,6 @@ export function SignupForm() {
         </Link>
       </p>
     </form>
+    </>
   );
 }

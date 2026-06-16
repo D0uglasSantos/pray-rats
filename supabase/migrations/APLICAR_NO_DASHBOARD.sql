@@ -217,8 +217,7 @@ drop view if exists public.group_rankings;
 drop view if exists public.weekly_group_rankings;
 drop view if exists public.monthly_group_rankings;
 
-create view public.group_rankings
-with (security_invoker = true) as
+create view public.group_rankings as
 select
   r.group_id,
   r.user_id,
@@ -230,8 +229,7 @@ select
 from public.group_rankings_mv r
 where public.is_group_member(r.group_id, auth.uid());
 
-create view public.weekly_group_rankings
-with (security_invoker = true) as
+create view public.weekly_group_rankings as
 select
   r.group_id,
   r.user_id,
@@ -243,8 +241,7 @@ select
 from public.weekly_group_rankings_mv r
 where public.is_group_member(r.group_id, auth.uid());
 
-create view public.monthly_group_rankings
-with (security_invoker = true) as
+create view public.monthly_group_rankings as
 select
   r.group_id,
   r.user_id,
@@ -284,3 +281,83 @@ grant execute on function public.refresh_ranking_views() to service_role;
 refresh materialized view public.group_rankings_mv;
 refresh materialized view public.weekly_group_rankings_mv;
 refresh materialized view public.monthly_group_rankings_mv;
+
+-- ─── 016: Profile com metadados OAuth (Google / Apple) ──────────────────────
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_name text;
+  v_avatar text;
+begin
+  v_name := coalesce(
+    nullif(trim(new.raw_user_meta_data->>'name'), ''),
+    nullif(trim(new.raw_user_meta_data->>'full_name'), ''),
+    nullif(
+      trim(both from concat_ws(
+        ' ',
+        nullif(new.raw_user_meta_data->>'given_name', ''),
+        nullif(new.raw_user_meta_data->>'family_name', '')
+      )),
+      ''
+    ),
+    'Novo usuário'
+  );
+
+  v_avatar := coalesce(
+    nullif(trim(new.raw_user_meta_data->>'avatar_url'), ''),
+    nullif(trim(new.raw_user_meta_data->>'picture'), '')
+  );
+
+  insert into public.profiles (id, name, email, avatar_url)
+  values (new.id, v_name, new.email, v_avatar);
+
+  return new;
+end;
+$$;
+
+-- ─── 017: Corrigir acesso às views de ranking (se já rodou 015 com security_invoker) ──
+
+drop view if exists public.group_rankings;
+drop view if exists public.weekly_group_rankings;
+drop view if exists public.monthly_group_rankings;
+
+create view public.group_rankings as
+select
+  r.group_id,
+  r.user_id,
+  r.name,
+  r.avatar_url,
+  r.total_checkins,
+  r.total_points,
+  r.last_checkin_at
+from public.group_rankings_mv r
+where public.is_group_member(r.group_id, auth.uid());
+
+create view public.weekly_group_rankings as
+select
+  r.group_id,
+  r.user_id,
+  r.name,
+  r.avatar_url,
+  r.total_checkins,
+  r.total_points,
+  r.week_start
+from public.weekly_group_rankings_mv r
+where public.is_group_member(r.group_id, auth.uid());
+
+create view public.monthly_group_rankings as
+select
+  r.group_id,
+  r.user_id,
+  r.name,
+  r.avatar_url,
+  r.total_checkins,
+  r.total_points,
+  r.month_start
+from public.monthly_group_rankings_mv r
+where public.is_group_member(r.group_id, auth.uid());

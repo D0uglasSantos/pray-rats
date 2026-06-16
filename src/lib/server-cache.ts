@@ -1,4 +1,4 @@
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 
 /** TTL curto para dados de leitura frequente (ranking, feed, stats). */
 export const SERVER_CACHE_TTL_SECONDS = 45;
@@ -11,6 +11,6 @@ export function groupDataTag(groupId: string): string {
 export function revalidateGroupDataCaches(groupIds: string[]): void {
   const unique = [...new Set(groupIds.filter(Boolean))];
   for (const groupId of unique) {
-    revalidateTag(groupDataTag(groupId));
+    updateTag(groupDataTag(groupId));
   }
 }

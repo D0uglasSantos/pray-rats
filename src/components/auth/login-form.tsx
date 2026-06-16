@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "@/actions/auth";
+import { AuthEmailDivider } from "@/components/auth/auth-email-divider";
+import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +14,16 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("error") === "auth") {
+      showToast(
+        "Não foi possível concluir o login social. Tente novamente ou use e-mail.",
+        "error",
+      );
+    }
+  }, [searchParams, showToast]);
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
@@ -24,7 +37,10 @@ export function LoginForm() {
   }
 
   return (
-    <form action={handleSubmit} className="space-y-4">
+    <>
+      <SocialAuthButtons />
+      <AuthEmailDivider />
+      <form action={handleSubmit} className="space-y-4">
       <Input
         name="email"
         type="email"
@@ -59,5 +75,6 @@ export function LoginForm() {
         </Link>
       </p>
     </form>
+    </>
   );
 }
