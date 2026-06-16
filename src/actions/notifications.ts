@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -147,6 +148,44 @@ async function createNotificationForUser(
   }
 }
 
+type GroupNotificationPayload = {
+  memberUserIds: string[];
+  type: string;
+  title: string;
+  body: string;
+  link: string;
+};
+
+async function fanOutGroupNotifications({
+  memberUserIds,
+  type,
+  title,
+  body,
+  link,
+}: GroupNotificationPayload): Promise<void> {
+  for (const userId of memberUserIds) {
+    await createNotificationForUser(userId, type, title, body, link);
+
+    try {
+      await sendPushToUser(userId, title, body, link);
+    } catch {
+      // Push is best-effort
+    }
+  }
+}
+
+function scheduleGroupNotifications(payload: GroupNotificationPayload): void {
+  after(async () => {
+    try {
+      await fanOutGroupNotifications(payload);
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("[notifications] fanOutGroupNotifications", error);
+      }
+    }
+  });
+}
+
 export async function notifyGroupOfNewMember(
   groupId: string,
   memberId: string,
@@ -169,25 +208,13 @@ export async function notifyGroupOfNewMember(
   if (!members?.length) return;
 
   const groupName = group?.name ?? "seu grupo";
-  const title = "Novo membro no grupo";
-  const body = `${memberName} entrou em ${groupName}`;
-  const link = "/group";
-
-  for (const member of members) {
-    await createNotificationForUser(
-      member.user_id,
-      "new_member",
-      title,
-      body,
-      link,
-    );
-
-    try {
-      await sendPushToUser(member.user_id, title, body, link);
-    } catch {
-      // Push is best-effort
-    }
-  }
+  scheduleGroupNotifications({
+    memberUserIds: members.map((member) => member.user_id),
+    type: "new_member",
+    title: "Novo membro no grupo",
+    body: `${memberName} entrou em ${groupName}`,
+    link: "/group",
+  });
 }
 
 export async function notifyGroupOfCheckin(
@@ -195,7 +222,7 @@ export async function notifyGroupOfCheckin(
   authorId: string,
   authorName: string,
   checkinTitle: string,
-  checkinId: string,
+  _checkinId: string,
 ): Promise<void> {
   const supabase = await createClient();
 
@@ -207,25 +234,13 @@ export async function notifyGroupOfCheckin(
 
   if (!members?.length) return;
 
-  const title = "Novo check-in no grupo";
-  const body = `${authorName} registrou: ${checkinTitle}`;
-  const link = "/feed";
-
-  for (const member of members) {
-    await createNotificationForUser(
-      member.user_id,
-      "new_checkin",
-      title,
-      body,
-      link,
-    );
-
-    try {
-      await sendPushToUser(member.user_id, title, body, link);
-    } catch {
-      // Push is best-effort
-    }
-  }
+  scheduleGroupNotifications({
+    memberUserIds: members.map((member) => member.user_id),
+    type: "new_checkin",
+    title: "Novo check-in no grupo",
+    body: `${authorName} registrou: ${checkinTitle}`,
+    link: "/feed",
+  });
 }
 
 async function sendPushToUser(
