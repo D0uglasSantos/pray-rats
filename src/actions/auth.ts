@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAppUrl } from "@/lib/app-url";
+import { mapActionError } from "@/lib/errors/map-action-error";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { COOKIE_NAME } from "@/lib/active-group";
 
@@ -11,9 +13,7 @@ export type ActionResult<T = void> =
   | { success: true; data?: T }
   | { success: false; error: string };
 
-export type SignUpResult =
-  | { success: true; needsEmailConfirmation: true }
-  | { success: false; error: string };
+export type SignUpResult = { success: false; error: string };
 
 export async function signUp(formData: FormData): Promise<SignUpResult> {
   const supabase = await createClient();
@@ -30,21 +30,31 @@ export async function signUp(formData: FormData): Promise<SignUpResult> {
     return { success: false, error: "A senha deve ter pelo menos 6 caracteres." };
   }
 
-  const { data, error } = await supabase.auth.signUp({
+  const admin = createAdminClient();
+  const { error: createError } = await admin.auth.admin.createUser({
     email,
     password,
-    options: {
-      data: { name },
-      emailRedirectTo: `${getAppUrl()}/auth/callback`,
-    },
+    email_confirm: true,
+    user_metadata: { name },
   });
 
-  if (error) {
-    return { success: false, error: error.message };
+  if (createError) {
+    return {
+      success: false,
+      error: mapActionError(createError.message, { context: "auth" }),
+    };
   }
 
-  if (!data.session) {
-    return { success: true, needsEmailConfirmation: true };
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (signInError) {
+    return {
+      success: false,
+      error: mapActionError(signInError.message, { context: "auth" }),
+    };
   }
 
   redirect("/onboarding");
@@ -95,7 +105,10 @@ export async function resetPassword(formData: FormData): Promise<ActionResult> {
   });
 
   if (error) {
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: mapActionError(error.message, { context: "auth" }),
+    };
   }
 
   return {
@@ -115,7 +128,10 @@ export async function updatePassword(formData: FormData): Promise<ActionResult> 
   const { error } = await supabase.auth.updateUser({ password });
 
   if (error) {
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: mapActionError(error.message, { context: "auth" }),
+    };
   }
 
   return { success: true };

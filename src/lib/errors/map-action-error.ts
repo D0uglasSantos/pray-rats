@@ -79,6 +79,29 @@ export function mapActionError(
     return "Código de convite inválido.";
   }
 
+  if (lower.includes("rate limit") || lower.includes("too many requests")) {
+    if (context === "auth") {
+      return "Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.";
+    }
+    return fallback;
+  }
+
+  if (
+    lower.includes("already been registered") ||
+    lower.includes("already registered") ||
+    lower.includes("user already exists")
+  ) {
+    return "Este e-mail já está cadastrado. Tente fazer login.";
+  }
+
+  if (lower.includes("invalid login credentials") || lower.includes("invalid credentials")) {
+    return "E-mail ou senha incorretos.";
+  }
+
+  if (lower.includes("email not confirmed")) {
+    return "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada (e spam).";
+  }
+
   if (lower.includes("row-level security") || lower.includes("rls")) {
     return fallback;
   }

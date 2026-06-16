@@ -29,7 +29,6 @@ const strengthConfig = [
 
 export function SignupForm() {
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [password, setPassword] = useState("");
   const { showToast } = useToast();
@@ -39,28 +38,12 @@ export function SignupForm() {
   async function handleSubmit(formData: FormData) {
     setLoading(true);
     setError(null);
-    setSuccess(null);
     const result = await signUp(formData);
     if (!result.success) {
       setError(result.error);
       showToast(result.error, "error");
-    } else if (result.needsEmailConfirmation) {
-      setSuccess(
-        "Conta criada! Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada e spam.",
-      );
     }
     setLoading(false);
-  }
-
-  if (success) {
-    return (
-      <div className="text-center space-y-4">
-        <p className="text-foreground">{success}</p>
-        <Link href="/login" className="text-primary font-medium hover:underline text-sm">
-          Ir para o login
-        </Link>
-      </div>
-    );
   }
 
   return (

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 
-export function CreateGroupForm() {
+export function CreateGroupForm({ backHref = "/onboarding" }: { backHref?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -26,7 +26,7 @@ export function CreateGroupForm() {
     <div className="min-h-screen gradient-subtle px-4 py-8">
       <div className="max-w-sm mx-auto">
         <Link
-          href="/onboarding"
+          href={backHref}
           className="inline-flex items-center gap-1 text-sm text-muted mb-6"
         >
           <ArrowLeft className="h-4 w-4" /> Voltar

@@ -20,6 +20,18 @@ describe("mapActionError", () => {
     ).toBe("Não foi possível registrar o check-in. Tente novamente.");
   });
 
+  it("maps auth rate limit errors", () => {
+    expect(
+      mapActionError(new Error("email rate limit exceeded"), { context: "auth" }),
+    ).toBe("Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.");
+  });
+
+  it("maps duplicate email errors", () => {
+    expect(
+      mapActionError(new Error("User already registered"), { context: "auth" }),
+    ).toBe("Este e-mail já está cadastrado. Tente fazer login.");
+  });
+
   it("returns short user-facing messages as-is", () => {
     expect(mapActionError("Informe um título.")).toBe("Informe um título.");
   });

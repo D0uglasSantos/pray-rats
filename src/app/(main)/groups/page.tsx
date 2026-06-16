@@ -2,16 +2,16 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronRight, Newspaper, Plus, Users } from "lucide-react";
+import { Newspaper, Users } from "lucide-react";
 import { getSessionUser } from "@/actions/auth";
 import { getActiveGroupId } from "@/lib/active-group";
 import { getUserGroups } from "@/actions/groups";
 import { PageHeader } from "@/components/layout/page-header";
 import { GroupSwitcher } from "@/components/groups/group-switcher";
+import { GroupActionsTrigger } from "@/components/groups/group-actions-trigger";
 import { ActivateGroupButton } from "@/components/groups/activate-group-button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import type { GroupWithRole } from "@/types/database";
 
 export default async function GroupsPage() {
@@ -28,14 +28,9 @@ export default async function GroupsPage() {
       <PageHeader
         title="Meus grupos"
         subtitle={`Você participa de ${groups.length} grupo${groups.length !== 1 ? "s" : ""}`}
-        action={
-          <Link href="/groups/join">
-            <Button size="sm" variant="secondary">
-              <Plus className="h-4 w-4" /> Entrar
-            </Button>
-          </Link>
-        }
       />
+
+      <GroupActionsTrigger />
 
       {groups.length > 1 && (
         <Card padding="sm">
@@ -108,19 +103,6 @@ export default async function GroupsPage() {
           );
         })}
       </div>
-
-      <Link href="/groups/create">
-        <Card padding="sm" className="flex items-center gap-3 hover:ring-2 hover:ring-primary/20 transition-all">
-          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <Plus className="h-5 w-5 text-primary" />
-          </div>
-          <div className="flex-1">
-            <p className="font-semibold text-sm">Criar novo grupo</p>
-            <p className="text-xs text-muted">Inicie um desafio espiritual</p>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted shrink-0" />
-        </Card>
-      </Link>
     </div>
   );
 }
