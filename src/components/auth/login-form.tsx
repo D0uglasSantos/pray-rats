@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "@/actions/auth";
-import { AuthEmailDivider } from "@/components/auth/auth-email-divider";
-import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
+// import { AuthEmailDivider } from "@/components/auth/auth-email-divider";
+// import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
+import { SOCIAL_AUTH_ENABLED } from "@/lib/auth-features";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ export function LoginForm() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    if (!SOCIAL_AUTH_ENABLED) return;
     if (searchParams.get("error") === "auth") {
       showToast(
         "Não foi possível concluir o login social. Tente novamente ou use e-mail.",
@@ -38,8 +40,10 @@ export function LoginForm() {
 
   return (
     <>
+      {/* SOCIAL_AUTH_ENABLED: descomente imports e bloco abaixo ao configurar Google/Apple no Supabase
       <SocialAuthButtons />
       <AuthEmailDivider />
+      */}
       <form action={handleSubmit} className="space-y-4">
       <Input
         name="email"

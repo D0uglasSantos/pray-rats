@@ -6,6 +6,13 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mapActionError } from "@/lib/errors/map-action-error";
+import { logServerError } from "@/lib/monitoring";
+import {
+  isDeadPushSubscription,
+  isPushConfigured,
+  logPushEvent,
+  sendPushWithRetry,
+} from "@/lib/push-delivery";
 import type { ActionResult } from "@/actions/auth";
 
 export interface Notification {
@@ -179,9 +186,9 @@ function scheduleGroupNotifications(payload: GroupNotificationPayload): void {
     try {
       await fanOutGroupNotifications(payload);
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("[notifications] fanOutGroupNotifications", error);
-      }
+      logServerError("notifications.fanOut", error, {
+        memberCount: payload.memberUserIds.length,
+      });
     }
   });
 }
@@ -249,19 +256,13 @@ async function sendPushToUser(
   body: string,
   link: string,
 ): Promise<void> {
-  const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const subject = process.env.VAPID_SUBJECT;
-
-  if (!privateKey || !publicKey || !subject) return;
+  if (!isPushConfigured()) return;
 
   let admin;
   try {
     admin = createAdminClient();
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[notifications] sendPushToUser", error);
-    }
+    logServerError("push.sendToUser.admin", error, { userId });
     return;
   }
 
@@ -273,41 +274,47 @@ async function sendPushToUser(
   if (!subscriptions?.length) return;
 
   const webpush = await import("web-push");
-  webpush.setVapidDetails(subject, publicKey, privateKey);
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT!,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!,
+  );
 
   const payload = JSON.stringify({ title, body, link });
 
-  const results = await Promise.allSettled(
-    subscriptions.map(async (sub) => {
-      try {
-        await webpush.sendNotification(
-          {
-            endpoint: sub.endpoint,
-            keys: { p256dh: sub.p256dh, auth: sub.auth },
-          },
-          payload,
-        );
-      } catch (error: unknown) {
-        const statusCode =
-          error && typeof error === "object" && "statusCode" in error
-            ? (error as { statusCode: number }).statusCode
-            : undefined;
+  for (const sub of subscriptions) {
+    const result = await sendPushWithRetry(async () => {
+      await webpush.sendNotification(
+        {
+          endpoint: sub.endpoint,
+          keys: { p256dh: sub.p256dh, auth: sub.auth },
+        },
+        payload,
+      );
+    });
 
-        if (statusCode === 404 || statusCode === 410) {
-          await admin.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
-        }
+    if (result.ok) continue;
 
-        throw error;
-      }
-    }),
-  );
+    const statusCode = result.statusCode;
 
-  if (process.env.NODE_ENV === "development") {
-    const failed = results.filter((r) => r.status === "rejected").length;
-    if (failed > 0) {
-      console.warn(`[notifications] ${failed} push(es) falharam para user ${userId}`);
+    if (isDeadPushSubscription(statusCode)) {
+      await admin.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+      logPushEvent("subscription_removed", { userId, endpoint: sub.endpoint, statusCode });
+      continue;
     }
+
+    logPushEvent("delivery_failed", {
+      userId,
+      endpoint: sub.endpoint,
+      statusCode,
+      message:
+        result.error instanceof Error ? result.error.message : String(result.error),
+    });
   }
+}
+
+export async function getPushServerStatus(): Promise<{ configured: boolean }> {
+  return { configured: isPushConfigured() };
 }
 
 export async function savePushSubscription(subscription: {

@@ -1,10 +1,22 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { savePushSubscription, removePushSubscription } from "@/actions/notifications";
+import {
+  getPushServerStatus,
+  savePushSubscription,
+  removePushSubscription,
+} from "@/actions/notifications";
 import { useToast } from "@/components/ui/toast";
 import { Card } from "@/components/ui/card";
-import { Bell } from "lucide-react";
+import { Bell, BellOff, AlertCircle } from "lucide-react";
+
+type PushUiStatus =
+  | "loading"
+  | "unsupported"
+  | "not_configured"
+  | "denied"
+  | "inactive"
+  | "active";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -17,42 +29,74 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
+function statusLabel(status: PushUiStatus): string {
+  switch (status) {
+    case "loading":
+      return "Verificando…";
+    case "unsupported":
+      return "Seu navegador não suporta push";
+    case "not_configured":
+      return "Push ainda não configurado no servidor";
+    case "denied":
+      return "Permissão bloqueada nas configurações do navegador";
+    case "inactive":
+      return "Desativado — toque para ativar";
+    case "active":
+      return "Ativo — você receberá alertas de check-ins";
+  }
+}
+
 export function PushNotificationToggle() {
-  const [enabled, setEnabled] = useState(false);
+  const [status, setStatus] = useState<PushUiStatus>("loading");
   const [isPending, startTransition] = useTransition();
   const { showToast } = useToast();
 
   const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
   useEffect(() => {
-    async function syncEnabledState() {
-      if (!("serviceWorker" in navigator)) return;
+    async function syncState() {
+      if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+        setStatus("unsupported");
+        return;
+      }
+
+      const server = await getPushServerStatus();
+      if (!server.configured || !vapidPublicKey) {
+        setStatus("not_configured");
+        return;
+      }
+
+      if (Notification.permission === "denied") {
+        setStatus("denied");
+        return;
+      }
 
       try {
         const registration = await navigator.serviceWorker.ready;
         const subscription = await registration.pushManager.getSubscription();
-        setEnabled(Boolean(subscription));
+        setStatus(subscription ? "active" : "inactive");
       } catch {
-        setEnabled(false);
+        setStatus("inactive");
       }
     }
 
-    void syncEnabledState();
-  }, []);
+    void syncState();
+  }, [vapidPublicKey]);
 
   async function enablePush() {
-    if (!vapidPublicKey) {
+    if (status === "not_configured" || !vapidPublicKey) {
       showToast("Notificações push não configuradas no servidor.", "error");
       return;
     }
 
-    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+    if (status === "unsupported") {
       showToast("Seu navegador não suporta notificações push.", "error");
       return;
     }
 
     const permission = await Notification.requestPermission();
     if (permission !== "granted") {
+      setStatus("denied");
       showToast("Permissão de notificação negada.", "error");
       return;
     }
@@ -80,9 +124,10 @@ export function PushNotificationToggle() {
       });
 
       if (result.success) {
-        setEnabled(true);
+        setStatus("active");
         showToast("Alertas no celular ativados!", "success");
       } else {
+        setStatus("inactive");
         showToast(result.error, "error");
       }
     });
@@ -97,42 +142,59 @@ export function PushNotificationToggle() {
       await subscription.unsubscribe();
       startTransition(async () => {
         await removePushSubscription(endpoint);
-        setEnabled(false);
+        setStatus("inactive");
         showToast("Alertas no celular desativados.", "info");
       });
     } else {
-      setEnabled(false);
+      setStatus("inactive");
     }
   }
+
+  const canToggle =
+    status === "active" || status === "inactive" || status === "denied";
+  const enabled = status === "active";
+  const showWarning = status === "not_configured" || status === "unsupported";
+
+  const StatusIcon =
+    status === "active"
+      ? Bell
+      : status === "not_configured" || status === "unsupported"
+        ? AlertCircle
+        : BellOff;
 
   return (
     <Card padding="sm">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Bell className="h-5 w-5 text-primary shrink-0" />
-          <div>
-            <p className="text-sm font-medium">Alertas no celular</p>
-            <p className="text-xs text-muted">
-              Receba push quando houver novos check-ins
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
-          disabled={isPending}
-          onClick={() => (enabled ? disablePush() : enablePush())}
-          className={`relative h-7 w-12 rounded-full transition-colors ${
-            enabled ? "bg-primary" : "bg-border"
-          } ${isPending ? "opacity-50" : ""}`}
-        >
-          <span
-            className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
-              enabled ? "left-5" : "left-0.5"
+        <div className="flex items-center gap-3 min-w-0">
+          <StatusIcon
+            className={`h-5 w-5 shrink-0 ${
+              showWarning ? "text-yellow-600" : "text-primary"
             }`}
           />
-        </button>
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Alertas no celular</p>
+            <p className="text-xs text-muted">{statusLabel(status)}</p>
+          </div>
+        </div>
+        {canToggle && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={enabled}
+            aria-label="Ativar alertas no celular"
+            disabled={isPending || status === "denied"}
+            onClick={() => (enabled ? disablePush() : enablePush())}
+            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+              enabled ? "bg-primary" : "bg-border"
+            } ${isPending || status === "denied" ? "opacity-50" : ""}`}
+          >
+            <span
+              className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                enabled ? "left-5" : "left-0.5"
+              }`}
+            />
+          </button>
+        )}
       </div>
     </Card>
   );

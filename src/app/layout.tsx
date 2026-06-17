@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { getAppUrl } from "@/lib/app-url";
 import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
@@ -46,6 +47,7 @@ export default function RootLayout({
     <html lang="pt-BR" className={`${geist.variable} h-full`}>
       <body className="min-h-full antialiased">
         <ToastProvider>{children}</ToastProvider>
+        <Analytics />
       </body>
     </html>
   );

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { signUp } from "@/actions/auth";
-import { AuthEmailDivider } from "@/components/auth/auth-email-divider";
-import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
+// import { AuthEmailDivider } from "@/components/auth/auth-email-divider";
+// import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,8 +50,10 @@ export function SignupForm() {
 
   return (
     <>
+      {/* SOCIAL_AUTH_ENABLED: descomente imports e bloco abaixo ao configurar Google/Apple no Supabase
       <SocialAuthButtons />
       <AuthEmailDivider />
+      */}
       <form action={handleSubmit} className="space-y-4">
       <Input
         name="name"

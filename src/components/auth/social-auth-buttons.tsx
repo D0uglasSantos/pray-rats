@@ -74,7 +74,7 @@ export function SocialAuthButtons() {
       }
 
       if (data.url) {
-        window.location.href = data.url;
+        globalThis.location.assign(data.url);
       }
     } catch {
       showToast("Não foi possível iniciar o login social.", "error");
