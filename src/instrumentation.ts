@@ -1,19 +1,12 @@
+import * as Sentry from "@sentry/nextjs";
+
 export async function register() {
-  // Reservado para Sentry ou outros APM quando SENTRY_DSN estiver configurado.
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    await import("../sentry.server.config");
+  }
+  if (process.env.NEXT_RUNTIME === "edge") {
+    await import("../sentry.edge.config");
+  }
 }
 
-export const onRequestError = async (
-  error: Error,
-  request: { path: string; method: string },
-) => {
-  console.error(
-    JSON.stringify({
-      source: "server",
-      scope: "onRequestError",
-      path: request.path,
-      method: request.method,
-      error: { message: error.message, name: error.name },
-      ts: new Date().toISOString(),
-    }),
-  );
-};
+export const onRequestError = Sentry.captureRequestError;
