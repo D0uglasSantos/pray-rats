@@ -8,6 +8,7 @@ import { signUp } from "@/actions/auth";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { cn } from "@/lib/utils/cn";
 
 function getPasswordStrength(pw: string): 0 | 1 | 2 | 3 {
@@ -72,9 +73,8 @@ export function SignupForm() {
         autoComplete="email"
       />
       <div className="space-y-2">
-        <Input
+        <PasswordInput
           name="password"
-          type="password"
           label="Senha"
           placeholder="Mínimo 8 caracteres"
           required

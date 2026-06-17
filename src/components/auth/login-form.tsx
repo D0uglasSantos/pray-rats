@@ -10,6 +10,7 @@ import { SOCIAL_AUTH_ENABLED } from "@/lib/auth-features";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
@@ -53,9 +54,8 @@ export function LoginForm() {
         required
         autoComplete="email"
       />
-      <Input
+      <PasswordInput
         name="password"
-        type="password"
         label="Senha"
         placeholder="••••••••"
         required

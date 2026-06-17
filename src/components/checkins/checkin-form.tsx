@@ -49,6 +49,7 @@ export function CheckinForm({
   const [checkedInAt, setCheckedInAt] = useState(() => toDatetimeLocalValue(new Date()));
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [step, setStep] = useState<"photo" | "details">("photo");
   const [isPending, startTransition] = useTransition();
 
   const activeActivities = activities.filter((activity) => activity.is_active);
@@ -180,8 +181,52 @@ export function CheckinForm({
     );
   }
 
+  if (step === "photo") {
+    return (
+      <div className="space-y-6">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted text-center">
+          Passo 1 de 2 — Foto
+        </p>
+        <ImageUpload
+          variant="first-step"
+          preview={imagePreview}
+          onSelect={handleSelectImage}
+          onClear={handleClearImage}
+        />
+        {error && <p className="text-sm text-error text-center">{error}</p>}
+        <Button type="button" fullWidth size="lg" onClick={() => setStep("details")}>
+          {imagePreview ? "Continuar" : "Continuar sem foto"}
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted">
+          Passo 2 de 2 — Detalhes
+        </p>
+        <button
+          type="button"
+          onClick={() => setStep("photo")}
+          className="text-xs font-medium text-primary hover:underline"
+        >
+          {imagePreview ? "Alterar foto" : "Adicionar foto"}
+        </button>
+      </div>
+
+      {imagePreview && (
+        <div className="relative rounded-xl overflow-hidden border border-border">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imagePreview}
+            alt="Foto do check-in"
+            className="w-full h-36 object-cover"
+          />
+        </div>
+      )}
+
       <div>
         <p className="text-sm font-medium mb-3">Tipo de atividade</p>
         <div className="grid grid-cols-2 gap-2">
@@ -257,13 +302,6 @@ export function CheckinForm({
               step={0.1}
             />
           )}
-
-          <ImageUpload
-            preview={imagePreview}
-            onSelect={handleSelectImage}
-            onClear={handleClearImage}
-            disabled={isPending}
-          />
 
           <div>
             <p className="text-sm font-medium mb-2">Visibilidade</p>

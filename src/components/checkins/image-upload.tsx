@@ -10,6 +10,8 @@ interface ImageUploadProps {
   onSelect: (file: File) => void;
   onClear: () => void;
   disabled?: boolean;
+  /** Textos para o passo inicial do check-in (foto primeiro). */
+  variant?: "default" | "first-step";
 }
 
 export function ImageUpload({
@@ -17,6 +19,7 @@ export function ImageUpload({
   onSelect,
   onClear,
   disabled,
+  variant = "default",
 }: ImageUploadProps) {
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
@@ -27,12 +30,17 @@ export function ImageUpload({
     e.target.value = "";
   }
 
+  const isFirstStep = variant === "first-step";
+
   return (
     <div>
-      <p className="text-sm font-medium mb-2">Foto do momento (opcional)</p>
+      <p className="text-sm font-medium mb-2">
+        {isFirstStep ? "Foto do momento" : "Foto do momento (opcional)"}
+      </p>
       <p className="text-xs text-muted mb-3">
-        Tire uma foto ou escolha da galeria — aparece no feed se público.
-        Máximo de {CHECKIN_IMAGE_MAX_SIZE_LABEL} por imagem.
+        {isFirstStep
+          ? "Comece tirando uma foto ou escolhendo da galeria. Depois preencha os detalhes do check-in."
+          : `Tire uma foto ou escolha da galeria — aparece no feed se público. Máximo de ${CHECKIN_IMAGE_MAX_SIZE_LABEL} por imagem.`}
       </p>
 
       {preview ? (
