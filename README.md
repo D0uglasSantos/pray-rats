@@ -81,6 +81,10 @@ npm run test:watch
 
 # Testes de integração com Supabase real (requer SUPABASE_SERVICE_ROLE_KEY)
 npm run test:integration
+
+# Testes E2E com Playwright (build + servidor local; autenticados requerem service role)
+npm run build
+npm run test:e2e
 ```
 
 **Cobertura atual:**
@@ -89,6 +93,7 @@ npm run test:integration
 - Geração de ranking e estatísticas de grupo.
 - Regras de visibilidade do Feed (público vs privado).
 - Fluxos completos de banco de dados (Integração).
+- E2E Playwright: rotas públicas (login, cadastro) e fluxos autenticados (grupo, check-in, feed).
 
 ## 🚀 Como rodar localmente
 
