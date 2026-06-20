@@ -67,13 +67,18 @@ export default async function DashboardPage() {
 
       {streak > 0 && (
         <Link href="/journey">
-          <Card padding="sm" className="flex items-center gap-3 border-primary/20 hover:border-primary/40 transition-colors">
+          <Card
+            padding="sm"
+            className="flex items-center gap-3 border-primary/20 hover:border-primary/40 transition-colors"
+          >
             <div className="h-10 w-10 rounded-xl gradient-spiritual flex items-center justify-center shrink-0">
               <CalendarDays className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm text-foreground">
-                {streak === 1 ? "1 dia de constância" : `${streak} dias seguidos`}
+                {streak === 1
+                  ? "1 dia de constância"
+                  : `${streak} dias seguidos`}
               </p>
               <p className="text-xs text-muted">Ver minha jornada espiritual</p>
             </div>
@@ -84,22 +89,29 @@ export default async function DashboardPage() {
 
       {streak === 0 && (
         <Link href="/journey">
-          <Card padding="sm" className="flex items-center gap-3 hover:border-primary/30 transition-colors">
+          <Card
+            padding="sm"
+            className="flex items-center gap-3 hover:border-primary/30 transition-colors"
+          >
             <div className="h-10 w-10 rounded-xl bg-surface-secondary flex items-center justify-center shrink-0">
               <CalendarDays className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-foreground">Comece sua jornada</p>
-              <p className="text-xs text-muted">Acompanhe seu calendário espiritual</p>
+              <p className="font-semibold text-sm text-foreground">
+                Comece sua jornada
+              </p>
+              <p className="text-xs text-muted">
+                Acompanhe seu calendário espiritual
+              </p>
             </div>
             <ChevronRight className="h-4 w-4 text-muted shrink-0" />
           </Card>
         </Link>
       )}
 
-      <DailyQuoteCard />
+      {/* <DailyQuoteCard /> */}
 
-      <div>
+      <div className="mt-4">
         <Link href="/check-in">
           <Button fullWidth size="lg" className="shadow-lg">
             Registrar momento de fé
@@ -111,10 +123,16 @@ export default async function DashboardPage() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold text-foreground">Check-ins de hoje</h2>
           <div className="flex items-center gap-3">
-            <Link href={`/feed?group=${activeGroup.id}`} className="text-sm text-primary font-medium hover:underline">
+            <Link
+              href={`/feed?group=${activeGroup.id}`}
+              className="text-sm text-primary font-medium hover:underline"
+            >
               Ver feed
             </Link>
-            <Link href="/group" className="text-sm text-primary font-medium flex items-center gap-0.5">
+            <Link
+              href="/group"
+              className="text-sm text-primary font-medium flex items-center gap-0.5"
+            >
               Grupo <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
@@ -133,7 +151,11 @@ export default async function DashboardPage() {
         ) : (
           <div className="space-y-3">
             {todayCheckins.map((checkin) => (
-              <Card key={checkin.id} padding="sm" className="flex items-center gap-3">
+              <Card
+                key={checkin.id}
+                padding="sm"
+                className="flex items-center gap-3"
+              >
                 {checkin.image_url && (
                   <CheckinImageButton
                     src={getCheckinImageDisplayUrl(checkin.image_url)}
@@ -157,7 +179,10 @@ export default async function DashboardPage() {
 
       {activeGroup.role === "admin" && (
         <Link href={`/groups/${activeGroup.id}/admin`}>
-          <Card padding="sm" className="flex items-center justify-between hover:ring-2 hover:ring-primary/20 transition-all">
+          <Card
+            padding="sm"
+            className="flex items-center justify-between hover:ring-2 hover:ring-primary/20 transition-all"
+          >
             <p className="font-medium text-sm">Administrar grupo</p>
             <ChevronRight className="h-5 w-5 text-muted" />
           </Card>

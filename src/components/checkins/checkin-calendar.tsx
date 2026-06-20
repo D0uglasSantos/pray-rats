@@ -4,19 +4,28 @@ import {
   startOfMonth,
   endOfMonth,
   eachDayOfInterval,
-  isSameDay,
   addMonths,
   subMonths,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { getCheckinImageDisplayUrl } from "@/lib/checkin-image-url";
+import { CheckinCalendarGrid } from "@/components/checkins/checkin-calendar-grid";
 import { memberProfilePath } from "@/lib/member-profile-path";
-import { cn } from "@/lib/utils/cn";
+
+export interface CalendarCheckin {
+  id: string;
+  title: string;
+  points: number;
+  checked_in_at: string;
+  image_url?: string | null;
+  activity_type?: { name: string } | { name: string }[] | null;
+}
 
 export interface CheckinDayEntry {
   imageUrl?: string | null;
+  count: number;
+  checkins: CalendarCheckin[];
 }
 
 const WEEKDAYS = ["dom.", "seg.", "ter.", "qua.", "qui.", "sex.", "sáb."];
@@ -79,50 +88,23 @@ export function CheckinCalendar({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
-        {Array.from({ length: monthStart.getDay() }).map((_, i) => (
-          <div key={`empty-${i}`} />
-        ))}
-        {days.map((day) => {
-          const key = format(day, "yyyy-MM-dd");
-          const entry = checkinsByDay[key];
-          const hasCheckin = Boolean(entry);
-          const isToday = isSameDay(day, today);
-          const imageUrl = entry?.imageUrl
-            ? getCheckinImageDisplayUrl(entry.imageUrl)
-            : null;
-
-          return (
-            <div
-              key={key}
-              className={cn(
-                "aspect-square flex items-center justify-center rounded-lg text-xs overflow-hidden",
-                hasCheckin && !imageUrl && "bg-primary text-white font-semibold",
-                !hasCheckin && "text-muted",
-                isToday && !hasCheckin && "ring-2 ring-primary/30",
-                hasCheckin && imageUrl && "ring-1 ring-primary/20",
-              )}
-            >
-              {imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={imageUrl}
-                  alt=""
-                  className="h-full w-full object-cover rounded-lg"
-                />
-              ) : (
-                format(day, "d")
-              )}
-            </div>
-          );
-        })}
-      </div>
+      <CheckinCalendarGrid
+        days={days}
+        monthStart={monthStart}
+        checkinsByDay={checkinsByDay}
+        today={today}
+      />
     </Card>
   );
 }
 
 export function buildCheckinsByDay(
-  checkins: Array<{ checked_in_at: string; image_url?: string | null }>,
+  checkins: Array<
+    {
+      checked_in_at: string;
+      image_url?: string | null;
+    } & Partial<Omit<CalendarCheckin, "checked_in_at" | "image_url">>
+  >,
   monthStart: Date,
   monthEnd: Date,
 ): Record<string, CheckinDayEntry> {
@@ -134,7 +116,22 @@ export function buildCheckinsByDay(
 
     const key = format(date, "yyyy-MM-dd");
     if (!byDay[key]) {
-      byDay[key] = { imageUrl: checkin.image_url };
+      byDay[key] = { imageUrl: null, count: 0, checkins: [] };
+    }
+
+    const entry = byDay[key];
+    entry.count++;
+    entry.checkins.push({
+      id: checkin.id ?? `${key}-${entry.count}`,
+      title: checkin.title ?? "Check-in",
+      points: checkin.points ?? 0,
+      checked_in_at: checkin.checked_in_at,
+      image_url: checkin.image_url,
+      activity_type: checkin.activity_type,
+    });
+
+    if (checkin.image_url && !entry.imageUrl) {
+      entry.imageUrl = checkin.image_url;
     }
   }
 
