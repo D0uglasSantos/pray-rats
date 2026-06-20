@@ -3,6 +3,7 @@ import {
   getAppUrl,
   appInviteUrl,
   getAuthCallbackUrl,
+  getPasswordResetRedirectUrl,
   getSupabaseRedirectUrls,
 } from "@/lib/app-url";
 
@@ -42,6 +43,13 @@ describe("getAppUrl", () => {
     process.env.NEXT_PUBLIC_APP_URL = "https://pray-rats.vercel.app";
     expect(getAuthCallbackUrl("/reset-password")).toBe(
       "https://pray-rats.vercel.app/auth/callback?next=%2Freset-password",
+    );
+  });
+
+  it("monta redirect de recuperação de senha sem query string", () => {
+    process.env.NEXT_PUBLIC_APP_URL = "https://pray-rats.vercel.app";
+    expect(getPasswordResetRedirectUrl()).toBe(
+      "https://pray-rats.vercel.app/reset-password",
     );
   });
 

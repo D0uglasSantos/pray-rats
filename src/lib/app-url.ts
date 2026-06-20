@@ -26,6 +26,11 @@ export function getAuthCallbackUrl(nextPath: string): string {
   return `${getAppUrl()}/auth/callback?next=${encodeURIComponent(path)}`;
 }
 
+/** Redirect do e-mail de recuperação de senha (sem query string — exigência do Supabase). */
+export function getPasswordResetRedirectUrl(): string {
+  return `${getAppUrl()}/reset-password`;
+}
+
 /** Redirect URLs recomendadas no Supabase (Authentication → URL Configuration). */
 export function getSupabaseRedirectUrls(): string[] {
   const base = getAppUrl();
