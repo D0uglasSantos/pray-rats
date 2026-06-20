@@ -5,8 +5,18 @@ const publicRoutes = ["/", "/login", "/signup", "/forgot-password", "/reset-pass
 const authRoutes = ["/login", "/signup", "/forgot-password"];
 
 export async function proxy(request: NextRequest) {
+  const { pathname, searchParams } = request.nextUrl;
+  const code = searchParams.get("code");
+
+  // Supabase pode redirecionar com ?code= para a home se a URL exata não estiver na allow list
+  if (code && pathname !== "/auth/callback" && pathname !== "/reset-password") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/reset-password";
+    url.search = `code=${encodeURIComponent(code)}`;
+    return NextResponse.redirect(url);
+  }
+
   const { supabaseResponse, user } = await updateSession(request);
-  const { pathname } = request.nextUrl;
 
   const isPublic = publicRoutes.some((r) => pathname.startsWith(r));
   const isAuthRoute = authRoutes.some((r) => pathname === r);

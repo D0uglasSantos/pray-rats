@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { getPasswordResetRedirectUrl } from "@/lib/app-url";
 import { mapActionError } from "@/lib/errors/map-action-error";
 import { authRateLimitMessage, checkAuthRateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -107,7 +106,6 @@ export async function signOut(): Promise<void> {
 }
 
 export async function resetPassword(formData: FormData): Promise<ActionResult> {
-  const supabase = await createClient();
   const email = formData.get("email") as string;
 
   if (!email) {
@@ -119,21 +117,7 @@ export async function resetPassword(formData: FormData): Promise<ActionResult> {
     return { success: false, error: authRateLimitMessage("resetPassword") };
   }
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: getPasswordResetRedirectUrl(),
-  });
-
-  if (error) {
-    return {
-      success: false,
-      error: mapActionError(error.message, { context: "auth" }),
-    };
-  }
-
-  return {
-    success: true,
-    data: undefined,
-  };
+  return { success: true, data: undefined };
 }
 
 export async function updatePassword(formData: FormData): Promise<ActionResult> {
