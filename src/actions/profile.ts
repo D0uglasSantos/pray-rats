@@ -173,7 +173,20 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
   return { success: true };
 }
 
-export async function uploadAvatar(formData: FormData): Promise<ActionResult<{ url: string }>> {
+function isAllowedAvatarUrl(avatarUrl: string): boolean {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) return false;
+
+  try {
+    const parsed = new URL(avatarUrl);
+    const expectedPrefix = `${supabaseUrl}/storage/v1/object/public/avatars/`;
+    return parsed.href.startsWith(expectedPrefix);
+  } catch {
+    return false;
+  }
+}
+
+export async function updateAvatarUrl(avatarUrl: string): Promise<ActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -183,40 +196,22 @@ export async function uploadAvatar(formData: FormData): Promise<ActionResult<{ u
     return { success: false, error: "Faça login para continuar." };
   }
 
-  const file = formData.get("file") as File;
-  if (!file || file.size === 0) {
-    return { success: false, error: "Selecione uma imagem." };
+  if (!isAllowedAvatarUrl(avatarUrl)) {
+    return { success: false, error: "URL de avatar inválida." };
   }
 
-  if (file.size > 2 * 1024 * 1024) {
-    return { success: false, error: "Imagem deve ter no máximo 2MB." };
-  }
-
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-  const path = `${user.id}/avatar.${ext}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from("avatars")
-    .upload(path, file, { upsert: true });
-
-  if (uploadError) {
-    return {
-      success: false,
-      error: mapActionError(uploadError, { context: "upload" }),
-    };
-  }
-
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("avatars").getPublicUrl(path);
-
-  await supabase
+  const { error } = await supabase
     .from("profiles")
-    .update({ avatar_url: `${publicUrl}?t=${Date.now()}` })
+    .update({ avatar_url: avatarUrl })
     .eq("id", user.id);
 
+  if (error) {
+    return { success: false, error: mapActionError(error, { context: "profile" }) };
+  }
+
   revalidatePath("/profile");
-  return { success: true, data: { url: publicUrl } };
+  revalidatePath("/home");
+  return { success: true };
 }
 
 export async function getProfile(userId: string) {

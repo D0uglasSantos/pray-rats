@@ -48,12 +48,12 @@ function canvasToJpegBlob(
   });
 }
 
-async function convertHeicToJpeg(file: File): Promise<File> {
+async function convertHeicToJpeg(file: File, quality: number): Promise<File> {
   const { default: heic2any } = await import("heic2any");
   const result = await heic2any({
     blob: file,
     toType: "image/jpeg",
-    quality: JPEG_QUALITY,
+    quality,
   });
   const blob = Array.isArray(result) ? result[0] : result;
   const baseName = file.name.replace(/\.[^.]+$/, "") || "foto";
@@ -71,18 +71,20 @@ function isHeic(file: File): boolean {
   );
 }
 
-/** Converte HEIC e outros formatos para JPEG antes do upload. */
-export async function prepareCheckinImageForUpload(file: File): Promise<File> {
-  if (!needsConversion(file)) {
-    return file;
-  }
+export interface PrepareImageOptions {
+  maxDimension?: number;
+  quality?: number;
+  /** Sempre comprime e converte para JPEG (ex.: avatares). */
+  forceOptimize?: boolean;
+}
 
-  if (isHeic(file)) {
-    return convertHeicToJpeg(file);
-  }
-
+async function resizeToJpeg(
+  file: File,
+  maxDimension: number,
+  quality: number,
+): Promise<File> {
   const img = await loadImageFromFile(file);
-  const scale = Math.min(1, MAX_DIMENSION / Math.max(img.width, img.height));
+  const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
   const width = Math.max(1, Math.round(img.width * scale));
   const height = Math.max(1, Math.round(img.height * scale));
 
@@ -96,11 +98,36 @@ export async function prepareCheckinImageForUpload(file: File): Promise<File> {
   }
 
   ctx.drawImage(img, 0, 0, width, height);
-  const blob = await canvasToJpegBlob(canvas, JPEG_QUALITY);
+  const blob = await canvasToJpegBlob(canvas, quality);
 
   const baseName = file.name.replace(/\.[^.]+$/, "") || "foto";
   return new File([blob], `${baseName}.jpg`, {
     type: "image/jpeg",
     lastModified: Date.now(),
   });
+}
+
+export async function prepareImageForUpload(
+  file: File,
+  options: PrepareImageOptions = {},
+): Promise<File> {
+  const maxDimension = options.maxDimension ?? MAX_DIMENSION;
+  const quality = options.quality ?? JPEG_QUALITY;
+  const forceOptimize = options.forceOptimize ?? false;
+
+  if (!forceOptimize && !needsConversion(file)) {
+    return file;
+  }
+
+  if (isHeic(file)) {
+    const jpeg = await convertHeicToJpeg(file, quality);
+    return resizeToJpeg(jpeg, maxDimension, quality);
+  }
+
+  return resizeToJpeg(file, maxDimension, quality);
+}
+
+/** Converte HEIC e outros formatos para JPEG antes do upload. */
+export async function prepareCheckinImageForUpload(file: File): Promise<File> {
+  return prepareImageForUpload(file);
 }

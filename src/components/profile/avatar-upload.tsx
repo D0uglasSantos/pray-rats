@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Camera, ImageIcon } from "lucide-react";
-import { uploadAvatar } from "@/actions/profile";
+import { updateAvatarUrl } from "@/actions/profile";
 import { useToast } from "@/components/ui/toast";
 import { Avatar } from "@/components/ui/avatar";
+import { uploadAvatarImageFromClient } from "@/lib/upload-avatar-image";
 import { cn } from "@/lib/utils/cn";
 
 interface AvatarUploadProps {
@@ -15,29 +17,31 @@ interface AvatarUploadProps {
 export function AvatarUpload({ avatarUrl, name }: AvatarUploadProps) {
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState(avatarUrl);
   const [isPending, startTransition] = useTransition();
   const { showToast } = useToast();
+  const router = useRouter();
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      showToast("Imagem deve ter no máximo 2MB.", "error");
-      e.target.value = "";
-      return;
-    }
-
-    const formData = new FormData();
-    formData.set("file", file);
-
     startTransition(async () => {
-      const result = await uploadAvatar(formData);
-      if (result.success) {
-        showToast("Foto de perfil atualizada!", "success");
-      } else {
-        showToast(result.error, "error");
+      const uploadResult = await uploadAvatarImageFromClient(file);
+      if (!uploadResult.success) {
+        showToast(uploadResult.error, "error");
+        return;
       }
+
+      const updateResult = await updateAvatarUrl(uploadResult.url);
+      if (!updateResult.success) {
+        showToast(updateResult.error, "error");
+        return;
+      }
+
+      setCurrentAvatarUrl(uploadResult.url);
+      showToast("Foto de perfil atualizada!", "success");
+      router.refresh();
     });
 
     e.target.value = "";
@@ -45,7 +49,7 @@ export function AvatarUpload({ avatarUrl, name }: AvatarUploadProps) {
 
   return (
     <div className="relative inline-block">
-      <Avatar src={avatarUrl} name={name} size="lg" />
+      <Avatar src={currentAvatarUrl} name={name} size="lg" />
       <div
         className={cn(
           "absolute -bottom-1 -right-1 flex gap-1",
