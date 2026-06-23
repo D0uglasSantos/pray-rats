@@ -16,7 +16,7 @@ export function AppHeader({ groups, activeGroupId, unreadCount = 0 }: AppHeaderP
 
   return (
     <header className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-border">
-      <div className="min-w-0 flex-1 flex items-center gap-2.5">
+      <div className="min-w-0 flex-1 flex items-center gap-2.5" data-tour-id="active-group">
         {singleGroup && (
           // eslint-disable-next-line @next/next/no-img-element
           <img

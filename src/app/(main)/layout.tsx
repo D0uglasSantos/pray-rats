@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/actions/auth";
+import { getAppTourState } from "@/actions/app-tour";
 import { getUserGroups } from "@/actions/groups";
 import { getUnreadCount } from "@/actions/notifications";
 import { getActiveGroupId } from "@/lib/active-group";
@@ -16,14 +17,20 @@ export default async function MainLayout({
   const groups = await getUserGroups(user.id);
   if (groups.length === 0) redirect("/onboarding");
 
-  const activeGroupId = (await getActiveGroupId()) ?? groups[0]?.id ?? null;
-  const unreadCount = await getUnreadCount();
+  const [activeGroupId, unreadCount, initialTourState] = await Promise.all([
+    getActiveGroupId(),
+    getUnreadCount(),
+    getAppTourState(),
+  ]);
+
+  const resolvedActiveGroupId = activeGroupId ?? groups[0]?.id ?? null;
 
   return (
     <AppShell
       groups={groups}
-      activeGroupId={activeGroupId}
+      activeGroupId={resolvedActiveGroupId}
       unreadCount={unreadCount}
+      initialTourState={initialTourState}
     >
       {children}
     </AppShell>

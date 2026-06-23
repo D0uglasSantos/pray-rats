@@ -33,8 +33,10 @@ export default defineConfig({
           },
           {
             name: "authenticated",
-            testMatch: /authenticated\.spec\.ts/,
+            testMatch: /(authenticated|app-tour)\.spec\.ts/,
             dependencies: ["setup"],
+            fullyParallel: false,
+            workers: 1,
             use: {
               ...devices["Desktop Chrome"],
               storageState: "playwright/.auth/user.json",

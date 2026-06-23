@@ -6,11 +6,11 @@ import { Home, Plus, Trophy, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 const navItems = [
-  { href: "/home", label: "Hoje", icon: Home },
-  { href: "/group", label: "Grupo", icon: Users },
-  { href: "/check-in", label: "Check-in", icon: Plus, highlight: true },
-  { href: "/ranking", label: "Ranking", icon: Trophy },
-  { href: "/profile", label: "Perfil", icon: User },
+  { href: "/home", label: "Hoje", icon: Home, tourId: "nav-home" },
+  { href: "/group", label: "Grupo", icon: Users, tourId: "nav-group" },
+  { href: "/check-in", label: "Check-in", icon: Plus, highlight: true, tourId: "nav-checkin" },
+  { href: "/ranking", label: "Ranking", icon: Trophy, tourId: "nav-ranking" },
+  { href: "/profile", label: "Perfil", icon: User, tourId: "nav-profile" },
 ];
 
 export function BottomNav() {
@@ -34,6 +34,7 @@ export function BottomNav() {
                 key={item.href}
                 href={item.href}
                 className="flex flex-col items-center -mt-4"
+                data-tour-id={item.tourId}
               >
                 <div
                   className={cn(
@@ -54,6 +55,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              data-tour-id={item.tourId}
               className={cn(
                 "flex flex-col items-center gap-0.5 min-w-[56px] py-1 transition-colors",
                 isActive ? "text-primary" : "text-muted",

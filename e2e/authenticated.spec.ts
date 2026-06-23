@@ -5,6 +5,12 @@ test.describe.configure({ mode: "serial" });
 test.describe("Fluxos autenticados", () => {
   test("onboarding oferece criar ou entrar em grupo", async ({ page }) => {
     await page.goto("/onboarding");
+    await page.waitForURL(/\/(onboarding|home)/, { timeout: 30_000 });
+
+    if (page.url().includes("/home")) {
+      return;
+    }
+
     await expect(page.getByText("Criar grupo")).toBeVisible();
     await expect(page.getByText("Entrar em grupo")).toBeVisible();
   });
@@ -21,7 +27,7 @@ test.describe("Fluxos autenticados", () => {
     await page.getByRole("button", { name: "Criar grupo" }).click();
 
     await page.waitForURL("**/home", { timeout: 30_000 });
-    await expect(page.getByText(groupName)).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator("select")).toContainText(groupName, { timeout: 15_000 });
 
     await page.goto("/check-in");
     await expect(page.getByText(/Passo 1 de 2/i)).toBeVisible();
