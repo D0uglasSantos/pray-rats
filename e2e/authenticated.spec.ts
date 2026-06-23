@@ -14,6 +14,10 @@ test.describe("Fluxos autenticados", () => {
 
     await page.goto("/groups/create");
     await page.getByLabel("Nome do grupo").fill(groupName);
+    await page.getByRole("button", { name: "Continuar" }).click();
+
+    await expect(page.getByText(/Passo 2 de 2/i)).toBeVisible();
+    await expect(page.getByText(/Atividades do check-in/i)).toBeVisible();
     await page.getByRole("button", { name: "Criar grupo" }).click();
 
     await page.waitForURL("**/home", { timeout: 30_000 });

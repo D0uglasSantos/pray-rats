@@ -4,16 +4,26 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { DEFAULT_ACTIVITIES } from "@/lib/constants/activities";
+import {
+  parseActivityDraftsJson,
+  validateActivityDrafts,
+} from "@/lib/activity-drafts";
 import { generateInviteCode } from "@/lib/invite-code";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import { getCachedGroupTotalCheckins } from "@/lib/cached-group-data";
 import { isUserGroupMember } from "@/lib/group-access";
-import { clearActiveGroup, setActiveGroup, type ActionResult } from "@/actions/auth";
+import {
+  clearActiveGroup,
+  setActiveGroup,
+  type ActionResult,
+} from "@/actions/auth";
 import { notifyGroupOfNewMember } from "@/actions/notifications";
 import { mapActionError } from "@/lib/errors/map-action-error";
 
-export async function createGroup(formData: FormData): Promise<ActionResult<{ groupId: string }>> {
+export async function createGroup(
+  formData: FormData,
+): Promise<ActionResult<{ groupId: string }>> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -30,6 +40,18 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ gr
 
   if (!name) {
     return { success: false, error: "Informe o nome do grupo." };
+  }
+
+  const activitiesInput =
+    parseActivityDraftsJson(formData.get("activities")) ??
+    DEFAULT_ACTIVITIES.map((activity) => ({
+      ...activity,
+      is_active: true,
+    }));
+
+  const activitiesValidationError = validateActivityDrafts(activitiesInput);
+  if (activitiesValidationError) {
+    return { success: false, error: activitiesValidationError };
   }
 
   let inviteCode = generateInviteCode();
@@ -77,12 +99,21 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ gr
   });
 
   if (memberError) {
-    return { success: false, error: mapActionError(memberError, { context: "group" }) };
+    return {
+      success: false,
+      error: mapActionError(memberError, { context: "group" }),
+    };
   }
 
-  const activities = DEFAULT_ACTIVITIES.map((a) => ({
+  const activities = activitiesInput.map((activity) => ({
     group_id: group.id,
-    ...a,
+    name: activity.name.trim(),
+    description: activity.description,
+    points: activity.points,
+    daily_limit: activity.daily_limit,
+    weekly_limit: activity.weekly_limit,
+    is_active: activity.is_active,
+    is_private_default: activity.is_private_default,
   }));
 
   const { error: activitiesError } = await supabase
@@ -90,7 +121,10 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ gr
     .insert(activities);
 
   if (activitiesError) {
-    return { success: false, error: mapActionError(activitiesError, { context: "group" }) };
+    return {
+      success: false,
+      error: mapActionError(activitiesError, { context: "group" }),
+    };
   }
 
   await setActiveGroup(group.id);
@@ -98,7 +132,9 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ gr
   redirect("/home");
 }
 
-export async function joinGroupByCode(code: string): Promise<ActionResult<{ groupId: string }>> {
+export async function joinGroupByCode(
+  code: string,
+): Promise<ActionResult<{ groupId: string }>> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -121,7 +157,10 @@ export async function joinGroupByCode(code: string): Promise<ActionResult<{ grou
     if (error.message.includes("INVALID_INVITE_CODE")) {
       return { success: false, error: "Código de convite inválido." };
     }
-    return { success: false, error: mapActionError(error, { context: "group" }) };
+    return {
+      success: false,
+      error: mapActionError(error, { context: "group" }),
+    };
   }
 
   await setActiveGroup(groupId as string);
@@ -180,7 +219,10 @@ export async function updateGroup(
     .eq("id", groupId);
 
   if (error) {
-    return { success: false, error: mapActionError(error, { context: "group" }) };
+    return {
+      success: false,
+      error: mapActionError(error, { context: "group" }),
+    };
   }
 
   revalidatePath(`/groups/${groupId}/admin`);
@@ -201,7 +243,10 @@ export async function removeMember(
     .eq("group_id", groupId);
 
   if (error) {
-    return { success: false, error: mapActionError(error, { context: "group" }) };
+    return {
+      success: false,
+      error: mapActionError(error, { context: "group" }),
+    };
   }
 
   revalidatePath(`/groups/${groupId}/admin`);
@@ -242,10 +287,96 @@ export async function leaveGroup(groupId: string): Promise<ActionResult> {
   redirect("/groups");
 }
 
+async function requireGroupAdmin(
+  groupId: string,
+): Promise<ActionResult<{ userId: string }>> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Faça login para continuar." };
+  }
+
+  if (!(await isUserAdmin(groupId, user.id))) {
+    return { success: false, error: "Apenas administradores podem fazer isso." };
+  }
+
+  return { success: true, data: { userId: user.id } };
+}
+
+export async function createActivityType(
+  groupId: string,
+  formData: FormData,
+): Promise<ActionResult<{ activityId: string }>> {
+  const adminCheck = await requireGroupAdmin(groupId);
+  if (!adminCheck.success) return adminCheck;
+
+  const name = (formData.get("name") as string)?.trim();
+  const description = (formData.get("description") as string)?.trim() || null;
+  const points = Number(formData.get("points") ?? 0);
+  const dailyLimitRaw = formData.get("daily_limit") as string | null;
+  const weeklyLimitRaw = formData.get("weekly_limit") as string | null;
+  const isPrivateDefault = formData.get("is_private_default") === "on";
+
+  if (!name) {
+    return { success: false, error: "Informe o nome da atividade." };
+  }
+
+  if (!Number.isFinite(points) || points < 0) {
+    return { success: false, error: "Informe uma pontuação válida." };
+  }
+
+  const dailyLimit = dailyLimitRaw ? Number(dailyLimitRaw) : null;
+  const weeklyLimit = weeklyLimitRaw ? Number(weeklyLimitRaw) : null;
+
+  if (dailyLimit !== null && (!Number.isFinite(dailyLimit) || dailyLimit < 1)) {
+    return { success: false, error: "Limite diário inválido." };
+  }
+
+  if (weeklyLimit !== null && (!Number.isFinite(weeklyLimit) || weeklyLimit < 1)) {
+    return { success: false, error: "Limite semanal inválido." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("activity_types")
+    .insert({
+      group_id: groupId,
+      name,
+      description,
+      points,
+      daily_limit: dailyLimit,
+      weekly_limit: weeklyLimit,
+      is_active: true,
+      is_private_default: isPrivateDefault,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    return {
+      success: false,
+      error: mapActionError(error, {
+        context: "group",
+        fallback: "Erro ao criar atividade.",
+      }),
+    };
+  }
+
+  revalidatePath(`/groups/${groupId}/admin`);
+  revalidatePath("/home");
+  revalidatePath("/check-in");
+  return { success: true, data: { activityId: data.id } };
+}
+
 export async function updateActivityType(
   activityId: string,
   groupId: string,
   data: {
+    name?: string;
+    description?: string | null;
     points?: number;
     daily_limit?: number | null;
     weekly_limit?: number | null;
@@ -253,6 +384,13 @@ export async function updateActivityType(
     is_private_default?: boolean;
   },
 ): Promise<ActionResult> {
+  const adminCheck = await requireGroupAdmin(groupId);
+  if (!adminCheck.success) return adminCheck;
+
+  if (data.name !== undefined && !data.name.trim()) {
+    return { success: false, error: "Informe o nome da atividade." };
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -262,30 +400,100 @@ export async function updateActivityType(
     .eq("group_id", groupId);
 
   if (error) {
-    return { success: false, error: mapActionError(error, { context: "group" }) };
+    return {
+      success: false,
+      error: mapActionError(error, { context: "group" }),
+    };
   }
 
   revalidatePath(`/groups/${groupId}/admin`);
+  revalidatePath("/home");
+  revalidatePath("/check-in");
   return { success: true };
+}
+
+export async function deleteActivityType(
+  activityId: string,
+  groupId: string,
+): Promise<ActionResult<{ deactivated: boolean }>> {
+  const adminCheck = await requireGroupAdmin(groupId);
+  if (!adminCheck.success) return adminCheck;
+
+  const supabase = await createClient();
+
+  const { count, error: countError } = await supabase
+    .from("checkins")
+    .select("*", { count: "exact", head: true })
+    .eq("activity_type_id", activityId);
+
+  if (countError) {
+    return {
+      success: false,
+      error: mapActionError(countError, { context: "group" }),
+    };
+  }
+
+  if (count && count > 0) {
+    const { error } = await supabase
+      .from("activity_types")
+      .update({ is_active: false })
+      .eq("id", activityId)
+      .eq("group_id", groupId);
+
+    if (error) {
+      return {
+        success: false,
+        error: mapActionError(error, { context: "group" }),
+      };
+    }
+
+    revalidatePath(`/groups/${groupId}/admin`);
+    revalidatePath("/home");
+    revalidatePath("/check-in");
+    return {
+      success: true,
+      data: { deactivated: true },
+    };
+  }
+
+  const { error } = await supabase
+    .from("activity_types")
+    .delete()
+    .eq("id", activityId)
+    .eq("group_id", groupId);
+
+  if (error) {
+    return {
+      success: false,
+      error: mapActionError(error, { context: "group" }),
+    };
+  }
+
+  revalidatePath(`/groups/${groupId}/admin`);
+  revalidatePath("/home");
+  revalidatePath("/check-in");
+  return { success: true, data: { deactivated: false } };
 }
 
 import type { GroupWithRole } from "@/types/database";
 
-export const getUserGroups = cache(async (userId: string): Promise<GroupWithRole[]> => {
-  const supabase = await createClient();
+export const getUserGroups = cache(
+  async (userId: string): Promise<GroupWithRole[]> => {
+    const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("group_members")
-    .select("role, groups(*)")
-    .eq("user_id", userId);
+    const { data, error } = await supabase
+      .from("group_members")
+      .select("role, groups(*)")
+      .eq("user_id", userId);
 
-  if (error) return [];
+    if (error) return [];
 
-  return (data ?? []).map((row) => ({
-    ...(row.groups as unknown as GroupWithRole),
-    role: row.role as GroupWithRole["role"],
-  }));
-});
+    return (data ?? []).map((row) => ({
+      ...(row.groups as unknown as GroupWithRole),
+      role: row.role as GroupWithRole["role"],
+    }));
+  },
+);
 
 export async function getGroupById(groupId: string) {
   const supabase = await createClient();
@@ -300,10 +508,7 @@ export async function getGroupById(groupId: string) {
   return data;
 }
 
-export async function getGroupStats(
-  groupId: string,
-  startDate: string | null,
-) {
+export async function getGroupStats(groupId: string, startDate: string | null) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -333,8 +538,7 @@ export async function getGroupStats(
     1,
     differenceInCalendarDays(startOfDay(new Date()), challengeStart) + 1,
   );
-  const avgCheckinsPerDay =
-    Math.round((totalCheckins / daysElapsed) * 10) / 10;
+  const avgCheckinsPerDay = Math.round((totalCheckins / daysElapsed) * 10) / 10;
 
   return { totalCheckins, avgCheckinsPerDay };
 }
@@ -347,9 +551,7 @@ export async function getGroupMemberStats(groupId: string) {
     .select("user_id, total_points, total_checkins")
     .eq("group_id", groupId);
 
-  const statsMap = new Map(
-    (rankings ?? []).map((r) => [r.user_id, r]),
-  );
+  const statsMap = new Map((rankings ?? []).map((r) => [r.user_id, r]));
 
   const members = await getGroupMembers(groupId);
 
@@ -357,9 +559,7 @@ export async function getGroupMemberStats(groupId: string) {
     const profile = Array.isArray(member.profile)
       ? member.profile[0]
       : member.profile;
-    const stats = statsMap.get(
-      (member as { user_id: string }).user_id,
-    );
+    const stats = statsMap.get((member as { user_id: string }).user_id);
 
     return {
       id: member.id,
@@ -424,7 +624,10 @@ export async function getActivitiesByGroupIds(
   return grouped;
 }
 
-export async function isUserInGroup(groupId: string, userId: string): Promise<boolean> {
+export async function isUserInGroup(
+  groupId: string,
+  userId: string,
+): Promise<boolean> {
   const supabase = await createClient();
 
   const { data } = await supabase

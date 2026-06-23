@@ -2,11 +2,8 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import {
-  updateGroup,
-  removeMember,
-  updateActivityType,
-} from "@/actions/groups";
+import { updateGroup, removeMember } from "@/actions/groups";
+import { GroupActivitiesSection } from "@/components/groups/activities/group-activities-section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -57,18 +54,6 @@ export function AdminPanel({
     });
   }
 
-  function handleActivityUpdate(
-    activityId: string,
-    field: string,
-    value: string | boolean | number | null,
-  ) {
-    startTransition(async () => {
-      await updateActivityType(activityId, group.id, {
-        [field]: value,
-      });
-    });
-  }
-
   return (
     <div className="space-y-6 pb-8">
       <Link
@@ -87,7 +72,11 @@ export function AdminPanel({
             {group.invite_code}
           </code>
           <Button size="sm" variant="secondary" onClick={copyInvite}>
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {copied ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
           </Button>
         </div>
         <p className="text-xs text-muted break-all">{inviteUrl}</p>
@@ -138,9 +127,7 @@ export function AdminPanel({
                   size="sm"
                 />
                 <span className="text-sm">{m.profile?.name}</span>
-                {m.role === "admin" && (
-                  <Badge variant="primary">Admin</Badge>
-                )}
+                {m.role === "admin" && <Badge variant="primary">Admin</Badge>}
               </div>
               {m.role !== "admin" && (
                 <Button
@@ -158,83 +145,7 @@ export function AdminPanel({
       </Card>
 
       <Card>
-        <p className="font-medium mb-3">Atividades</p>
-        <div className="space-y-4">
-          {activities.map((activity) => (
-            <div
-              key={activity.id}
-              className="p-3 rounded-xl bg-surface-secondary space-y-2"
-            >
-              <div className="flex items-center justify-between">
-                <p className="font-medium text-sm">{activity.name}</p>
-                <label className="flex items-center gap-1 text-xs">
-                  <input
-                    type="checkbox"
-                    checked={activity.is_active}
-                    onChange={(e) =>
-                      handleActivityUpdate(
-                        activity.id,
-                        "is_active",
-                        e.target.checked,
-                      )
-                    }
-                  />
-                  Ativa
-                </label>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="text-[10px] text-muted">Pontos</label>
-                  <input
-                    type="number"
-                    defaultValue={activity.points}
-                    min={0}
-                    className="w-full h-8 px-2 rounded-lg border border-border text-sm"
-                    onBlur={(e) =>
-                      handleActivityUpdate(
-                        activity.id,
-                        "points",
-                        Number(e.target.value),
-                      )
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-muted">Lim/dia</label>
-                  <input
-                    type="number"
-                    defaultValue={activity.daily_limit ?? ""}
-                    min={1}
-                    className="w-full h-8 px-2 rounded-lg border border-border text-sm"
-                    onBlur={(e) =>
-                      handleActivityUpdate(
-                        activity.id,
-                        "daily_limit",
-                        e.target.value ? Number(e.target.value) : null,
-                      )
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-muted">Lim/sem</label>
-                  <input
-                    type="number"
-                    defaultValue={activity.weekly_limit ?? ""}
-                    min={1}
-                    className="w-full h-8 px-2 rounded-lg border border-border text-sm"
-                    onBlur={(e) =>
-                      handleActivityUpdate(
-                        activity.id,
-                        "weekly_limit",
-                        e.target.value ? Number(e.target.value) : null,
-                      )
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <GroupActivitiesSection groupId={group.id} activities={activities} />
       </Card>
     </div>
   );
