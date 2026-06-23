@@ -208,11 +208,9 @@ export function AppTourProvider({
     if (tourParam === "replay") {
       replayHandledRef.current = true;
       autoStartHandledRef.current = true;
+      openTourAt(0, true);
       router.replace("/home", { scroll: false });
-      const timer = window.setTimeout(() => {
-        openTourAt(0, true);
-      }, 300);
-      return () => window.clearTimeout(timer);
+      return;
     }
   }, [pathname, hasGroups, searchParams, router, openTourAt]);
 
