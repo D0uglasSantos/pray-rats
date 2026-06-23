@@ -146,7 +146,7 @@ Workflow: [.github/workflows/e2e.yml](./.github/workflows/e2e.yml)
 
 ## Checklist go-live
 
-- [ ] Migrations `001`–`017` aplicadas (ou `APLICAR_NO_DASHBOARD.sql` se DB existente)
+- [ ] Migrations `001`–`018` aplicadas (ou `APLICAR_NO_DASHBOARD.sql` + `VALIDAR_PRODUCAO.sql` se DB existente)
 - [ ] Buckets `avatars` e `checkins` criados + políticas (`003`)
 - [ ] `NEXT_PUBLIC_APP_URL` na Vercel = Site URL no Supabase
 - [ ] Redirect URLs: `/auth/callback` e `/reset-password` (dev + prod)

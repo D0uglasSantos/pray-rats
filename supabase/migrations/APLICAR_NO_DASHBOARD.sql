@@ -361,3 +361,15 @@ select
   r.month_start
 from public.monthly_group_rankings_mv r
 where public.is_group_member(r.group_id, auth.uid());
+
+-- ─── 018: Buckets avatars e checkins ─────────────────────────────────────────
+
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do nothing;
+
+insert into storage.buckets (id, name, public)
+values ('checkins', 'checkins', true)
+on conflict (id) do nothing;
+
+-- ─── Storage: se upload de foto falhar, rode VALIDAR_PRODUCAO.sql ────────────
