@@ -29,7 +29,7 @@ test.describe("App Tour (tutorial interativo)", () => {
 
   test("replay via perfil navega para home com tour", async ({ page }) => {
     await page.goto("/profile");
-    await page.getByText("Ver tutorial do aplicativo").click();
+    await page.getByRole("link", { name: /Ver tutorial do aplicativo/i }).click();
     await page.waitForURL("**/home**", { timeout: 15_000 });
 
     await expect(

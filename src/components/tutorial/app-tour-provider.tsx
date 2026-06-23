@@ -191,6 +191,16 @@ export function AppTourProvider({
   }, [isOpen, skipDialogOpen]);
 
   useEffect(() => {
+    if (pathname !== "/home") {
+      if (isOpen) {
+        setIsOpen(false);
+        setSkipDialogOpen(false);
+      }
+      replayHandledRef.current = false;
+    }
+  }, [pathname, isOpen]);
+
+  useEffect(() => {
     if (pathname !== "/home" || !hasGroups) return;
     if (replayHandledRef.current) return;
 
@@ -244,7 +254,7 @@ export function AppTourProvider({
     <AppTourContext.Provider value={contextValue}>
       {children}
 
-      {isOpen && (
+      {isOpen && pathname === "/home" && (
         <>
           <AppTourOverlay
             targetId={currentStep.target}
