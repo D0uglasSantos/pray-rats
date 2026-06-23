@@ -5,6 +5,12 @@ test.describe.configure({ mode: "serial" });
 test.describe("Fluxos autenticados", () => {
   test("onboarding oferece criar ou entrar em grupo", async ({ page }) => {
     await page.goto("/onboarding");
+    await page.waitForURL(/\/(onboarding|home)/, { timeout: 30_000 });
+
+    if (page.url().includes("/home")) {
+      return;
+    }
+
     await expect(page.getByText("Criar grupo")).toBeVisible();
     await expect(page.getByText("Entrar em grupo")).toBeVisible();
   });

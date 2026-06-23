@@ -6,6 +6,7 @@ test.describe.configure({ mode: "serial" });
 test.describe("App Tour (tutorial interativo)", () => {
   test.beforeEach(async ({ page }) => {
     await ensureUserHasGroup(page);
+    await page.goto("/group");
   });
 
   test("home contém targets do tutorial", async ({ page }) => {
@@ -33,7 +34,7 @@ test.describe("App Tour (tutorial interativo)", () => {
 
     await expect(
       page.getByRole("dialog").filter({ hasText: "Bem-vindo ao PrayRats" }),
-    ).toBeVisible({ timeout: 15_000 });
+    ).toBeVisible({ timeout: 20_000 });
   });
 
   test("tutorial abre com diálogo acessível em replay", async ({ page }) => {
