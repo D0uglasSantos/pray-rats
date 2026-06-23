@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { BookOpen, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
@@ -8,7 +7,10 @@ export function ProfileTourReplayLink() {
   return (
     <section className="space-y-2">
       <h3 className="text-sm font-medium text-foreground">Ajuda</h3>
-      <Link href="/home?tour=replay">
+      <a
+        href="/home?tour=replay"
+        className="block"
+      >
         <Card
           padding="sm"
           className="flex items-center gap-3 hover:ring-2 hover:ring-primary/20 transition-all"
@@ -24,7 +26,7 @@ export function ProfileTourReplayLink() {
           </div>
           <ChevronRight className="h-5 w-5 text-muted shrink-0" aria-hidden="true" />
         </Card>
-      </Link>
+      </a>
     </section>
   );
 }

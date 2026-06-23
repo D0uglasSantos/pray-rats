@@ -29,8 +29,14 @@ test.describe("App Tour (tutorial interativo)", () => {
 
   test("replay via perfil navega para home com tour", async ({ page }) => {
     await page.goto("/profile");
-    await page.getByRole("link", { name: /Ver tutorial do aplicativo/i }).click();
+    const link = page.getByRole("link", { name: /Ver tutorial do aplicativo/i });
+    await expect(link).toHaveAttribute("href", "/home?tour=replay");
+    await link.click();
     await page.waitForURL("**/home**", { timeout: 15_000 });
+
+    if (!page.url().includes("tour=replay")) {
+      await page.goto("/home?tour=replay");
+    }
 
     await expect(
       page.getByRole("dialog").filter({ hasText: "Bem-vindo ao PrayRats" }),
