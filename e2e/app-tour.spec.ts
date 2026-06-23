@@ -1,19 +1,13 @@
 import { test, expect } from "@playwright/test";
+import { ensureUserHasGroup } from "./helpers/ensure-group";
 
-/**
- * Testes E2E do tutorial interativo (App Tour).
- *
- * Pré-requisitos para execução completa:
- * - SUPABASE_SERVICE_ROLE_KEY configurada (auth.setup provisiona usuário)
- * - Migration 019_app_tour.sql aplicada no projeto Supabase
- * - Usuário de teste com pelo menos um grupo (criado em authenticated.spec.ts)
- *
- * Cenários cobertos aqui usam data-tour-id e atributos ARIA estáveis.
- * Testes que dependem de estado persistido no Supabase (completed/dismissed)
- * exigem helpers adicionais para resetar app_tour_* no perfil do usuário E2E.
- */
+test.describe.configure({ mode: "serial" });
 
 test.describe("App Tour (tutorial interativo)", () => {
+  test.beforeEach(async ({ page }) => {
+    await ensureUserHasGroup(page);
+  });
+
   test("home contém targets do tutorial", async ({ page }) => {
     await page.goto("/home");
     await expect(page.locator("[data-tour-id='home-stats']")).toBeVisible();
