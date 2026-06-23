@@ -33,7 +33,7 @@ export default defineConfig({
           },
           {
             name: "authenticated",
-            testMatch: /authenticated\.spec\.ts/,
+            testMatch: /(authenticated|app-tour)\.spec\.ts/,
             dependencies: ["setup"],
             use: {
               ...devices["Desktop Chrome"],

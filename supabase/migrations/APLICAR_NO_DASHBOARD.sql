@@ -372,4 +372,27 @@ insert into storage.buckets (id, name, public)
 values ('checkins', 'checkins', true)
 on conflict (id) do nothing;
 
+-- ─── 019: App tour (tutorial interativo no perfil) ───────────────────────────
+
+alter table public.profiles
+  add column if not exists app_tour_version integer not null default 0;
+
+alter table public.profiles
+  add column if not exists app_tour_status text not null default 'pending';
+
+alter table public.profiles
+  add column if not exists app_tour_step integer not null default 0;
+
+alter table public.profiles
+  add column if not exists app_tour_updated_at timestamptz null;
+
+do $$
+begin
+  alter table public.profiles
+    add constraint profiles_app_tour_status_check
+    check (app_tour_status in ('pending', 'in_progress', 'completed', 'dismissed'));
+exception
+  when duplicate_object then null;
+end $$;
+
 -- ─── Storage: se upload de foto falhar, rode VALIDAR_PRODUCAO.sql ────────────

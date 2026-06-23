@@ -47,7 +47,7 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-bold mt-1">Olá, {firstName} ✝</h1>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3" data-tour-id="home-stats">
         <Card padding="sm" className="text-center">
           <Flame className="h-5 w-5 text-accent mx-auto mb-1" />
           <p className="text-2xl font-bold text-foreground">{streak}</p>
@@ -111,7 +111,7 @@ export default async function DashboardPage() {
 
       {/* <DailyQuoteCard /> */}
 
-      <div className="mt-4">
+      <div className="mt-4" data-tour-id="home-checkin-cta">
         <Link href="/check-in">
           <Button fullWidth size="lg" className="shadow-lg">
             Registrar momento de fé

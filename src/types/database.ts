@@ -3,12 +3,28 @@ export type CheckinVisibility = "public" | "private";
 export type CheckinStatus = "valid" | "pending" | "rejected";
 export type PeriodType = "weekly" | "monthly" | "general";
 
+export type AppTourStatus =
+  | "pending"
+  | "in_progress"
+  | "completed"
+  | "dismissed";
+
+export interface AppTourState {
+  version: number;
+  status: AppTourStatus;
+  step: number;
+}
+
 export interface Profile {
   id: string;
   name: string;
   email: string;
   avatar_url: string | null;
   bio: string | null;
+  app_tour_version: number;
+  app_tour_status: AppTourStatus;
+  app_tour_step: number;
+  app_tour_updated_at: string | null;
   created_at: string;
   updated_at: string;
 }
