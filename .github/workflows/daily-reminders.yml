@@ -1,0 +1,34 @@
+name: Lembretes diários
+
+# Dispara os lembretes de check-in (manhã/tarde/noite) chamando o endpoint
+# /api/cron/daily-reminders a cada 30 min. Usado em vez do Vercel Cron porque
+# o plano Hobby só permite crons 1x ao dia.
+#
+# Configuração necessária:
+#   - Secret CRON_SECRET (Settings → Secrets and variables → Actions)
+#     com o mesmo valor configurado na Vercel.
+#
+# Nota: schedules só rodam na branch default; atrasos de alguns minutos são
+# normais e absorvidos pela janela de 60 min de cada lembrete.
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Chamar endpoint de lembretes
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "Secret CRON_SECRET não configurado no repositório."
+            exit 1
+          fi
+          curl -fsS -H "Authorization: Bearer $CRON_SECRET" \
+            "https://pray-rats.vercel.app/api/cron/daily-reminders"
+          echo
