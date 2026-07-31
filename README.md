@@ -139,14 +139,17 @@ O app envia até 3 pushes por dia (manhã 9h, tarde 15h, noite 20h — horário 
 do usuário) lembrando de marcar os feitos do dia. Usuários que já fizeram
 check-in no dia não recebem o lembrete.
 
-- Agendamento: `vercel.json` → Vercel Cron chama `/api/cron/daily-reminders`
-  a cada 30 min com `Authorization: Bearer $CRON_SECRET` (envie a variável
-  `CRON_SECRET` com um segredo forte: `openssl rand -hex 32`).
+- Agendamento: workflow do GitHub Actions
+  ([daily-reminders.yml](./.github/workflows/daily-reminders.yml)) chama
+  `/api/cron/daily-reminders` a cada 30 min com
+  `Authorization: Bearer $CRON_SECRET`. É preciso cadastrar `CRON_SECRET`
+  como **secret do repositório** (Actions) **e** como env var na Vercel.
+  (O Vercel Cron nativo exigiria o plano Pro para rodar mais de 1x ao dia.)
+- Alternativa ao GitHub Actions: qualquer agendador HTTP (ex.: cron-job.org)
+  chamando a mesma URL com o header Bearer.
 - Preferências (opt-in + fuso IANA) ficam em `notification_preferences`
   (migration `020`); o usuário ativa em **Perfil → Lembretes diários**.
 - Envios são deduplicados em `daily_reminder_sends` (1 push por slot/dia).
-- Plano Hobby da Vercel limita a frequência de crons; se necessário, agende
-  externamente (ex.: cron-job.org) chamando a mesma URL com o header Bearer.
 
 ### CI — testes E2E (GitHub Actions)
 
