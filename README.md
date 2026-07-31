@@ -127,10 +127,26 @@ Abra [http://localhost:3000](http://localhost:3000).
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Se usar push |
 | `VAPID_PRIVATE_KEY` | Se usar push |
 | `VAPID_SUBJECT` | Se usar push |
+| `CRON_SECRET` | Se usar lembretes diários |
 | `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` | Opcional |
 
 3. Atualize **Site URL** e **Redirect URLs** no Supabase com a URL de produção.
 4. Deploy → a Vercel roda `npm run build` automaticamente.
+
+### Lembretes diários (cron)
+
+O app envia até 3 pushes por dia (manhã 9h, tarde 15h, noite 20h — horário local
+do usuário) lembrando de marcar os feitos do dia. Usuários que já fizeram
+check-in no dia não recebem o lembrete.
+
+- Agendamento: `vercel.json` → Vercel Cron chama `/api/cron/daily-reminders`
+  a cada 30 min com `Authorization: Bearer $CRON_SECRET` (envie a variável
+  `CRON_SECRET` com um segredo forte: `openssl rand -hex 32`).
+- Preferências (opt-in + fuso IANA) ficam em `notification_preferences`
+  (migration `020`); o usuário ativa em **Perfil → Lembretes diários**.
+- Envios são deduplicados em `daily_reminder_sends` (1 push por slot/dia).
+- Plano Hobby da Vercel limita a frequência de crons; se necessário, agende
+  externamente (ex.: cron-job.org) chamando a mesma URL com o header Bearer.
 
 ### CI — testes E2E (GitHub Actions)
 
@@ -146,12 +162,13 @@ Workflow: [.github/workflows/e2e.yml](./.github/workflows/e2e.yml)
 
 ## Checklist go-live
 
-- [ ] Migrations `001`–`018` aplicadas (ou `APLICAR_NO_DASHBOARD.sql` + `VALIDAR_PRODUCAO.sql` se DB existente)
+- [ ] Migrations `001`–`020` aplicadas (ou `APLICAR_NO_DASHBOARD.sql` + `VALIDAR_PRODUCAO.sql` se DB existente)
 - [ ] Buckets `avatars` e `checkins` criados + políticas (`003`)
 - [ ] `NEXT_PUBLIC_APP_URL` na Vercel = Site URL no Supabase
 - [ ] Redirect URLs: `/auth/callback` e `/reset-password` (dev + prod)
 - [ ] Teste: cadastro, login, esqueci senha, check-in com foto, feed, ranking
 - [ ] Push (opcional): chaves VAPID na Vercel + permissão no navegador
+- [ ] Lembretes diários (opcional): `CRON_SECRET` na Vercel + usuário ativa no Perfil
 - [ ] Sentry (opcional): DSN configurado + alertas
 
 ---
@@ -163,6 +180,7 @@ Workflow: [.github/workflows/e2e.yml](./.github/workflows/e2e.yml)
 - **Check-ins:** registro com foto, limites diários/semanais, validação no Postgres
 - **Gamificação:** pontos, streaks, ranking semanal/mensal (materialized views)
 - **Feed social** e **notificações** (in-app + Web Push)
+- **Lembretes diários:** 3 pushes por dia (manhã, tarde, noite) no fuso do usuário, com opt-in no perfil
 - **PWA:** instalável, offline fallback
 
 ---

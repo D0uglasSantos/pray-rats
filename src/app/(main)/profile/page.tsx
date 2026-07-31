@@ -12,6 +12,7 @@ import { AvatarUpload } from "@/components/profile/avatar-upload";
 import { UserRecordsSection } from "@/components/profile/user-records";
 import { GroupListItem } from "@/components/groups/group-list-item";
 import { PushNotificationToggle } from "@/components/profile/push-notification-toggle";
+import { DailyRemindersToggle } from "@/components/profile/daily-reminders-toggle";
 import { ProfileTourReplayLink } from "@/components/profile/profile-tour-replay-link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,6 +89,8 @@ export default async function ProfilePage() {
       <ProfileForm profile={profile} />
 
       <PushNotificationToggle />
+
+      <DailyRemindersToggle />
 
       <ProfileTourReplayLink />
 
