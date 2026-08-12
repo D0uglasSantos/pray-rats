@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAppUrl } from "@/lib/app-url";
 import {
   isDeadPushSubscription,
   isPushConfigured,
@@ -42,7 +43,15 @@ export async function sendPushToUser(
     process.env.VAPID_PRIVATE_KEY!,
   );
 
-  const payload = JSON.stringify({ title, body, link });
+  const appUrl = getAppUrl();
+  const payload = JSON.stringify({
+    title,
+    body,
+    link,
+    icon: `${appUrl}/icons/icon-192.png`,
+    // Android status-bar badge: white silhouette on transparent PNG
+    badge: `${appUrl}/icons/badge-96.png`,
+  });
 
   for (const sub of subscriptions) {
     const result = await sendPushWithRetry(async () => {
