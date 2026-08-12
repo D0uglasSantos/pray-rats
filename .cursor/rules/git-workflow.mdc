@@ -1,0 +1,201 @@
+---
+description: GitHub Flow branch naming and Conventional Commits standards
+alwaysApply: true
+---
+
+# Git Workflow
+
+All Git operations in this repository must follow GitHub Flow and the
+conventions defined below.
+
+## GitHub Flow
+
+- Treat `main` as the stable, deployable branch.
+- Never commit directly to `main`.
+- Create one short-lived branch for each logical change.
+- Create new branches from an up-to-date `main`, unless the repository
+  documentation explicitly defines another base.
+- Open a pull request, run the relevant checks, and request review before
+  merging.
+- Delete the branch after it is merged when it is no longer needed.
+
+## Branches
+
+Use this pattern:
+
+```text
+<type>/<short-description>
+```
+
+Allowed branch types:
+
+- `feat`: new functionality
+- `fix`: bug fix
+- `refactor`: code restructuring without a behavior change
+- `chore`: maintenance or configuration
+- `docs`: documentation only
+- `test`: test additions or corrections
+- `perf`: performance improvement
+- `build`: build system or dependency changes
+- `ci`: continuous integration or delivery changes
+
+Branch names must:
+
+- be lowercase
+- use kebab-case
+- be short and descriptive
+- describe one logical change
+- contain no spaces, underscores, accents, or uppercase letters
+
+Examples for this project:
+
+```text
+feat/group-invitations
+feat/checkin-comments
+fix/daily-reminder-timezone
+refactor/ranking-cache
+chore/update-dependencies
+docs/update-supabase-setup
+test/checkin-validation
+perf/feed-loading
+ci/e2e-checks
+```
+
+## Commits
+
+Use Conventional Commits with a mandatory scope:
+
+```text
+<type>(<scope>): <description>
+```
+
+Allowed commit types:
+
+- `feat`
+- `fix`
+- `refactor`
+- `perf`
+- `style`
+- `test`
+- `docs`
+- `chore`
+- `build`
+- `ci`
+- `revert`
+
+Commit messages must:
+
+- include a scope
+- use a lowercase scope
+- use a short noun for the affected domain, module, or infrastructure
+- use a concise English description
+- start the description with a lowercase word
+- describe what the commit does
+- not end the description with a period
+- represent one logical change
+
+Useful scopes for this project include:
+
+```text
+auth
+groups
+checkins
+feed
+ranking
+profile
+notifications
+reminders
+push
+pwa
+api
+database
+supabase
+ui
+deps
+config
+github
+ci
+docs
+```
+
+Choose the narrowest meaningful scope. A scope outside this list is allowed
+when it describes the affected area more accurately.
+
+Examples:
+
+```text
+feat(groups): add invitation link sharing
+feat(checkins): add image upload
+fix(reminders): respect the user timezone
+fix(auth): preserve the password reset session
+refactor(ranking): extract cache invalidation
+perf(feed): reduce initial query size
+test(checkins): cover weekly activity limits
+docs(readme): clarify Supabase setup
+chore(deps): update project dependencies
+ci(github): add pull request checks
+```
+
+Do not use vague messages such as:
+
+```text
+changes
+adjustments
+update
+fix stuff
+final
+working
+small changes
+```
+
+## Commit granularity
+
+Each commit must contain one logical change. Split unrelated changes into
+separate commits, even when they belong to the same branch.
+
+Prefer:
+
+```text
+feat(checkins): add activity selector
+fix(checkins): reject duplicate daily entries
+test(checkins): cover duplicate entry validation
+```
+
+Instead of:
+
+```text
+feat(checkins): add selector and fix validation and tests
+```
+
+## Breaking changes
+
+Add `!` before the colon when a change breaks an existing public contract:
+
+```text
+feat(api)!: change the checkin response format
+```
+
+Include a `BREAKING CHANGE:` footer when migration details or a longer
+explanation are necessary.
+
+## Agent instructions
+
+When asked to create a branch:
+
+1. Inspect the current branch and working tree when necessary.
+2. Determine the correct branch type from the actual task.
+3. Generate a lowercase kebab-case name using `<type>/<short-description>`.
+4. Show the proposed name before or while creating the branch.
+5. Do not switch branches when uncommitted changes could be overwritten or
+   mixed with unrelated work.
+
+When asked to create commits:
+
+1. Inspect `git status` and the relevant staged and unstaged diffs.
+2. Understand the purpose of each change before selecting a message.
+3. Separate unrelated changes into distinct commits.
+4. Select the correct type and the narrowest meaningful scope.
+5. Use `<type>(<scope>): <description>` for every commit.
+6. Run checks appropriate to the changes before reporting completion.
+
+Never create a commit outside this convention.
