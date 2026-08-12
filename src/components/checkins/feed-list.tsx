@@ -11,6 +11,7 @@ const LOAD_COUNT = 20;
 
 interface FeedListProps {
   groupId: string;
+  currentUserId: string;
   initialItems: FeedCheckin[];
   initialNextCursor: FeedCursor | null;
   initialHasMore: boolean;
@@ -18,6 +19,7 @@ interface FeedListProps {
 
 export function FeedList({
   groupId,
+  currentUserId,
   initialItems,
   initialNextCursor,
   initialHasMore,
@@ -40,7 +42,11 @@ export function FeedList({
   return (
     <div className="space-y-4">
       {items.map((checkin) => (
-        <CheckinCard key={checkin.id} checkin={checkin} />
+        <CheckinCard
+          key={checkin.id}
+          checkin={checkin}
+          currentUserId={currentUserId}
+        />
       ))}
 
       {isPending && (

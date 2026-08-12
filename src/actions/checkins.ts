@@ -24,6 +24,7 @@ import {
 import { parseCheckedInAtInput } from "@/lib/checkin-datetime";
 import { scheduleRankingRefresh } from "@/lib/ranking-cache";
 import { statsLookbackDate, streakLookbackDate } from "@/lib/stats-lookback";
+import { getCheckinsEngagement } from "@/actions/checkin-engagement";
 import { notifyGroupOfCheckin } from "@/actions/notifications";
 import { getActivitiesByGroupIds, getUserGroups } from "@/actions/groups";
 import type { ActionResult } from "@/actions/auth";
@@ -579,6 +580,21 @@ const FEED_SELECT =
 
 const FEED_LIMIT = 20;
 
+async function enrichFeedItems(items: FeedCheckin[]): Promise<FeedCheckin[]> {
+  if (items.length === 0) return items;
+
+  const engagement = await getCheckinsEngagement(items.map((item) => item.id));
+  return items.map((item) => {
+    const data = engagement[item.id];
+    return {
+      ...item,
+      reactions: data?.reactions ?? [],
+      comments: data?.comments ?? [],
+      myReaction: data?.myReaction ?? null,
+    };
+  });
+}
+
 export async function getFeedCheckins(
   groupId: string,
   cursor: FeedCursor | null = null,
@@ -595,7 +611,12 @@ export async function getFeedCheckins(
 
   if (cursor === null) {
     const cached = await getCachedFeedFirstPage(groupId, limit);
-    if (cached) return cached;
+    if (cached) {
+      return {
+        ...cached,
+        items: await enrichFeedItems(cached.items),
+      };
+    }
   }
 
   let query = supabase
@@ -642,7 +663,11 @@ export async function getFeedCheckins(
   const nextCursor: FeedCursor | null =
     hasMore && last ? { checked_in_at: last.checked_in_at, id: last.id } : null;
 
-  return { items, hasMore, nextCursor };
+  return {
+    items: await enrichFeedItems(items),
+    hasMore,
+    nextCursor,
+  };
 }
 
 export async function calculateStreak(userId: string, groupId: string): Promise<number> {

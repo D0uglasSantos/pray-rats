@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { getSupabaseUrl } from "@/lib/supabase/url";
 
 /**
  * Cliente Supabase com service role — apenas para operações server-side
@@ -6,16 +7,15 @@ import { createClient } from "@supabase/supabase-js";
  * Nunca importar em componentes client.
  */
 export function createAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!url || !serviceRoleKey) {
+  if (!serviceRoleKey) {
     throw new Error(
       "SUPABASE_SERVICE_ROLE_KEY não configurada. Necessária para envio de push.",
     );
   }
 
-  return createClient(url, serviceRoleKey, {
+  return createClient(getSupabaseUrl(), serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }

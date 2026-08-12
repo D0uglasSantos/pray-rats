@@ -8,8 +8,8 @@ import {
 } from "@/lib/validation";
 
 describe("DEFAULT_ACTIVITIES", () => {
-  it("contém 9 atividades padrão", () => {
-    expect(DEFAULT_ACTIVITIES).toHaveLength(9);
+  it("contém 10 atividades padrão", () => {
+    expect(DEFAULT_ACTIVITIES).toHaveLength(10);
   });
 
   it("cada atividade tem pontos >= 0", () => {
@@ -35,6 +35,14 @@ describe("DEFAULT_ACTIVITIES", () => {
     const vigilia = DEFAULT_ACTIVITIES.find((a) => a.name.includes("Vigília"));
     expect(vigilia?.weekly_limit).toBe(1);
     expect(vigilia?.points).toBe(25);
+  });
+
+  it("outro vale 5 pontos e tem limite diário 1", () => {
+    const outro = DEFAULT_ACTIVITIES.find((a) => a.name === "Outro");
+    expect(outro?.points).toBe(5);
+    expect(outro?.daily_limit).toBe(1);
+    expect(outro?.weekly_limit).toBeNull();
+    expect(outro?.is_private_default).toBe(false);
   });
 });
 

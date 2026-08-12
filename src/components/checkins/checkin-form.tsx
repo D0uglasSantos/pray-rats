@@ -269,8 +269,12 @@ export function CheckinForm({
 
           <Input
             name="title"
-            label="Título"
-            placeholder="Ex: Oração da manhã"
+            label={selectedActivity.name === "Outro" ? "O que você fez?" : "Título"}
+            placeholder={
+              selectedActivity.name === "Outro"
+                ? "Descreva o que você fez"
+                : "Ex: Oração da manhã"
+            }
             required
             maxLength={140}
           />

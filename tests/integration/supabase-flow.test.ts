@@ -126,7 +126,7 @@ describe.skipIf(!runIntegration)("Integração Supabase — fluxo completo", () 
       .select("id, name")
       .eq("group_id", groupId);
 
-    expect(activitiesDb).toHaveLength(9);
+    expect(activitiesDb).toHaveLength(10);
     activityId =
       activitiesDb!.find((a) => a.name === "Oração pessoal")!.id;
   });

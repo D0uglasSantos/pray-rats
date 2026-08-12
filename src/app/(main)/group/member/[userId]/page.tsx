@@ -6,6 +6,7 @@ import { getSessionUser } from "@/actions/auth";
 import { getActiveGroupId } from "@/lib/active-group";
 import { getSharedGroupId, getUserGroups, isUserInGroup } from "@/actions/groups";
 import { getUserStats } from "@/actions/checkins";
+import { getCheckinsEngagement } from "@/actions/checkin-engagement";
 import { getProfile } from "@/actions/profile";
 import { canViewProfile, getFollowStatus } from "@/actions/follows";
 import {
@@ -73,6 +74,9 @@ export default async function MemberProfilePage({
   const checkinsByDay = buildCheckinsByDay(stats.checkins, monthStart, monthEnd);
   const nav = monthNavigationHrefs(userId, month, now);
   const isOwnProfile = userId === user.id;
+  const engagementByCheckin = await getCheckinsEngagement(
+    stats.checkins.map((checkin) => checkin.id),
+  );
 
   return (
     <div className="space-y-6">
@@ -158,8 +162,12 @@ export default async function MemberProfilePage({
                     activity_type: Array.isArray(checkin.activity_type)
                       ? checkin.activity_type[0]
                       : checkin.activity_type,
+                    reactions: engagementByCheckin[checkin.id]?.reactions,
+                    comments: engagementByCheckin[checkin.id]?.comments,
+                    myReaction: engagementByCheckin[checkin.id]?.myReaction,
                   }}
                   hideProfileLink
+                  currentUserId={user.id}
                 />
               </div>
             ))}

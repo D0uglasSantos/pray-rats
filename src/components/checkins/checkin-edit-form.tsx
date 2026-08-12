@@ -294,7 +294,12 @@ export function CheckinEditForm({ context, groups }: CheckinEditFormProps) {
 
         <Input
           name="title"
-          label="Título"
+          label={selectedActivity?.name === "Outro" ? "O que você fez?" : "Título"}
+          placeholder={
+            selectedActivity?.name === "Outro"
+              ? "Descreva o que você fez"
+              : "Ex: Oração da manhã"
+          }
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required

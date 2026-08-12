@@ -57,6 +57,7 @@ describe("getAppUrl", () => {
     process.env.NEXT_PUBLIC_APP_URL = "https://pray-rats.vercel.app";
     expect(getSupabaseRedirectUrls()).toEqual([
       "https://pray-rats.vercel.app/auth/callback",
+      "https://pray-rats.vercel.app/auth/confirm",
       "https://pray-rats.vercel.app/reset-password",
     ]);
   });

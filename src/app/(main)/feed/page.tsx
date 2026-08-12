@@ -53,6 +53,7 @@ export default async function FeedPage({
       ) : (
         <FeedList
           groupId={feedGroupId}
+          currentUserId={user.id}
           initialItems={items}
           initialNextCursor={nextCursor}
           initialHasMore={hasMore}

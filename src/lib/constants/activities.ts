@@ -80,4 +80,12 @@ export const DEFAULT_ACTIVITIES: DefaultActivity[] = [
     weekly_limit: null,
     is_private_default: true,
   },
+  {
+    name: "Outro",
+    description: "Prática ou ato espiritual descrito pelo participante.",
+    points: 5,
+    daily_limit: 1,
+    weekly_limit: null,
+    is_private_default: false,
+  },
 ];

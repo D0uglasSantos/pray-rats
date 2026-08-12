@@ -34,5 +34,9 @@ export function getPasswordResetRedirectUrl(): string {
 /** Redirect URLs recomendadas no Supabase (Authentication → URL Configuration). */
 export function getSupabaseRedirectUrls(): string[] {
   const base = getAppUrl();
-  return [`${base}/auth/callback`, `${base}/reset-password`];
+  return [
+    `${base}/auth/callback`,
+    `${base}/auth/confirm`,
+    `${base}/reset-password`,
+  ];
 }

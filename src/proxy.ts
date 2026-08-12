@@ -1,7 +1,7 @@
 import { updateSession } from "@/lib/supabase/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 
-const publicRoutes = ["/", "/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback"];
+const publicRoutes = ["/", "/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback", "/auth/confirm"];
 const authRoutes = ["/login", "/signup", "/forgot-password"];
 
 export async function proxy(request: NextRequest) {
@@ -9,7 +9,12 @@ export async function proxy(request: NextRequest) {
   const code = searchParams.get("code");
 
   // Supabase pode redirecionar com ?code= para a home se a URL exata não estiver na allow list
-  if (code && pathname !== "/auth/callback" && pathname !== "/reset-password") {
+  if (
+    code &&
+    pathname !== "/auth/callback" &&
+    pathname !== "/auth/confirm" &&
+    pathname !== "/reset-password"
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = "/reset-password";
     url.search = `code=${encodeURIComponent(code)}`;

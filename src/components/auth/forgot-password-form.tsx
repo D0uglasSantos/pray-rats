@@ -2,12 +2,32 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { resetPassword } from "@/actions/auth";
 import { mapActionError } from "@/lib/errors/map-action-error";
 import { getPasswordResetRedirectUrl } from "@/lib/app-url";
-import { createClient } from "@/lib/supabase/client";
+import { getSupabaseUrl } from "@/lib/supabase/url";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+/**
+ * Cliente só para disparar o e-mail de recovery em fluxo implicit.
+ * Assim o link não exige code_verifier PKCE no mesmo browser.
+ */
+function createRecoveryEmailClient() {
+  return createSupabaseClient(
+    getSupabaseUrl(),
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        flowType: "implicit",
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    },
+  );
+}
 
 export function ForgotPasswordForm() {
   const [error, setError] = useState<string | null>(null);
@@ -26,10 +46,11 @@ export function ForgotPasswordForm() {
       return;
     }
 
-    const supabase = createClient();
-    const { error: sendError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: getPasswordResetRedirectUrl(),
-    });
+    const supabase = createRecoveryEmailClient();
+    const { error: sendError } = await supabase.auth.resetPasswordForEmail(
+      email,
+      { redirectTo: getPasswordResetRedirectUrl() },
+    );
 
     if (sendError) {
       setError(mapActionError(sendError.message, { context: "auth" }));
@@ -45,12 +66,16 @@ export function ForgotPasswordForm() {
     return (
       <div className="text-center space-y-4">
         <p className="text-foreground">
-          Enviamos um link de recuperação para seu e-mail. Verifique sua caixa de entrada.
+          Enviamos um link de recuperação para seu e-mail. Verifique sua caixa
+          de entrada.
         </p>
         <p className="text-xs text-muted">
-          Abra o link neste mesmo navegador (evite o app de e-mail interno).
+          Use o link mais recente. Se o e-mail atrasar, confira a pasta de spam.
         </p>
-        <Link href="/login" className="text-primary font-medium hover:underline text-sm">
+        <Link
+          href="/login"
+          className="text-primary font-medium hover:underline text-sm"
+        >
           Voltar ao login
         </Link>
       </div>

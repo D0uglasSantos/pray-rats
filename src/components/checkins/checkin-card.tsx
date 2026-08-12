@@ -4,9 +4,12 @@ import { ptBR } from "date-fns/locale";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { CheckinComments } from "@/components/checkins/checkin-comments";
 import { CheckinImageButton } from "@/components/checkins/checkin-image-button";
+import { CheckinReactions } from "@/components/checkins/checkin-reactions";
 import { getCheckinImageDisplayUrl } from "@/lib/checkin-image-url";
 import { memberProfilePath } from "@/lib/member-profile-path";
+import type { FeedComment, FeedReactionSummary } from "@/types/feed";
 
 interface CheckinCardProps {
   checkin: {
@@ -19,11 +22,21 @@ interface CheckinCardProps {
     image_url?: string | null;
     profile?: { name: string; avatar_url?: string | null } | null;
     activity_type?: { name: string } | null;
+    reactions?: FeedReactionSummary[];
+    comments?: FeedComment[];
+    myReaction?: string | null;
   };
   hideProfileLink?: boolean;
+  currentUserId?: string;
+  showEngagement?: boolean;
 }
 
-export function CheckinCard({ checkin, hideProfileLink }: CheckinCardProps) {
+export function CheckinCard({
+  checkin,
+  hideProfileLink,
+  currentUserId,
+  showEngagement = true,
+}: CheckinCardProps) {
   const profile = checkin.profile;
   const activityName = checkin.activity_type?.name ?? "Atividade";
   const profileHref =
@@ -84,6 +97,21 @@ export function CheckinCard({ checkin, hideProfileLink }: CheckinCardProps) {
           src={getCheckinImageDisplayUrl(checkin.image_url)}
           alt={`Foto de ${checkin.title}`}
         />
+      )}
+
+      {showEngagement && currentUserId && (
+        <div className="space-y-3">
+          <CheckinReactions
+            checkinId={checkin.id}
+            initialReactions={checkin.reactions}
+            initialMyReaction={checkin.myReaction}
+          />
+          <CheckinComments
+            checkinId={checkin.id}
+            currentUserId={currentUserId}
+            initialComments={checkin.comments}
+          />
+        </div>
       )}
     </Card>
   );
