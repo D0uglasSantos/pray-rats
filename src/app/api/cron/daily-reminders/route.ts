@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isPushConfigured } from "@/lib/push-delivery";
 import { sendPushToUser } from "@/lib/send-push-to-user";
+import { sendExpoPushToUser } from "@/lib/send-expo-push-to-user";
 import { logServerError, logServerEvent } from "@/lib/monitoring";
 import {
   DEFAULT_TIMEZONE,
@@ -31,10 +31,6 @@ export async function GET(request: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  if (!isPushConfigured()) {
-    return Response.json({ sent: 0, skipped: "push_not_configured" });
-  }
-
   let admin;
   try {
     admin = createAdminClient();
@@ -59,6 +55,7 @@ export async function GET(request: Request) {
     skippedOutsideWindow: 0,
     skippedAlreadySent: 0,
     skippedCheckedIn: 0,
+    skippedWithoutDevice: 0,
     errors: 0,
   };
 
@@ -115,8 +112,12 @@ export async function GET(request: Request) {
         }
       }
 
-      await sendPushToUser(pref.user_id, slot.title, slot.body, REMINDER_LINK);
-      stats.sent++;
+      const [webSent, mobileSent] = await Promise.all([
+        sendPushToUser(pref.user_id, slot.title, slot.body, REMINDER_LINK),
+        sendExpoPushToUser(pref.user_id, slot.title, slot.body, REMINDER_LINK),
+      ]);
+      if (webSent + mobileSent > 0) stats.sent++;
+      else stats.skippedWithoutDevice++;
     } catch (userError) {
       stats.errors++;
       logServerError("cron.dailyReminders.user", userError, { userId: pref.user_id });

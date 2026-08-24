@@ -66,7 +66,7 @@ Execute **na ordem numérica** no [SQL Editor](https://supabase.com/dashboard):
 
 #### Projeto já em produção (atualização incremental)
 
-Use `supabase/migrations/APLICAR_NO_DASHBOARD.sql` — seções **011–017** documentadas e idempotentes. Cole uma seção por vez ou o arquivo inteiro.
+Use `supabase/migrations/APLICAR_NO_DASHBOARD.sql` — seções aditivas **011–022** documentadas e idempotentes. Cole uma seção por vez ou o arquivo inteiro.
 
 ### 4. Storage (Supabase Dashboard)
 
@@ -127,6 +127,7 @@ Abra [http://localhost:3000](http://localhost:3000).
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Se usar push |
 | `VAPID_PRIVATE_KEY` | Se usar push |
 | `VAPID_SUBJECT` | Se usar push |
+| `EXPO_ACCESS_TOKEN` | Opcional; segurança reforçada do Expo Push mobile |
 | `CRON_SECRET` | Se usar lembretes diários |
 | `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` | Opcional |
 
@@ -150,6 +151,7 @@ check-in no dia não recebem o lembrete.
 - Preferências (opt-in + fuso IANA) ficam em `notification_preferences`
   (migration `020`); o usuário ativa em **Perfil → Lembretes diários**.
 - Envios são deduplicados em `daily_reminder_sends` (1 push por slot/dia).
+- Instalações do app ficam em `mobile_push_devices` (migration `022`); Web Push e Expo Push são enviados de forma independente.
 
 ### CI — testes E2E (GitHub Actions)
 
@@ -165,12 +167,13 @@ Workflow: [.github/workflows/e2e.yml](./.github/workflows/e2e.yml)
 
 ## Checklist go-live
 
-- [ ] Migrations `001`–`020` aplicadas (ou `APLICAR_NO_DASHBOARD.sql` + `VALIDAR_PRODUCAO.sql` se DB existente)
+- [ ] Migrations `001`–`022` aplicadas (ou `APLICAR_NO_DASHBOARD.sql` + `VALIDAR_PRODUCAO.sql` se DB existente)
 - [ ] Buckets `avatars` e `checkins` criados + políticas (`003`)
 - [ ] `NEXT_PUBLIC_APP_URL` na Vercel = Site URL no Supabase
 - [ ] Redirect URLs: `/auth/callback` e `/reset-password` (dev + prod)
 - [ ] Teste: cadastro, login, esqueci senha, check-in com foto, feed, ranking
 - [ ] Push (opcional): chaves VAPID na Vercel + permissão no navegador
+- [ ] Push mobile: migration `022`, projeto/credenciais EAS e development build física
 - [ ] Lembretes diários (opcional): `CRON_SECRET` na Vercel + usuário ativa no Perfil
 - [ ] Sentry (opcional): DSN configurado + alertas
 

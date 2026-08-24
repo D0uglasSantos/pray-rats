@@ -18,15 +18,15 @@ export async function sendPushToUser(
   title: string,
   body: string,
   link: string,
-): Promise<void> {
-  if (!isPushConfigured()) return;
+): Promise<number> {
+  if (!isPushConfigured()) return 0;
 
   let admin;
   try {
     admin = createAdminClient();
   } catch (error) {
     logServerError("push.sendToUser.admin", error, { userId });
-    return;
+    return 0;
   }
 
   const { data: subscriptions } = await admin
@@ -34,7 +34,7 @@ export async function sendPushToUser(
     .select("endpoint, p256dh, auth")
     .eq("user_id", userId);
 
-  if (!subscriptions?.length) return;
+  if (!subscriptions?.length) return 0;
 
   const webpush = await import("web-push");
   webpush.setVapidDetails(
@@ -53,6 +53,7 @@ export async function sendPushToUser(
     badge: `${appUrl}/icons/badge-96.png`,
   });
 
+  let sent = 0;
   for (const sub of subscriptions) {
     const result = await sendPushWithRetry(async () => {
       await webpush.sendNotification(
@@ -64,7 +65,10 @@ export async function sendPushToUser(
       );
     });
 
-    if (result.ok) continue;
+    if (result.ok) {
+      sent += 1;
+      continue;
+    }
 
     const statusCode = result.statusCode;
 
@@ -82,4 +86,5 @@ export async function sendPushToUser(
         result.error instanceof Error ? result.error.message : String(result.error),
     });
   }
+  return sent;
 }
