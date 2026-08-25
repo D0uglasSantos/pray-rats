@@ -66,7 +66,7 @@ Execute **na ordem numérica** no [SQL Editor](https://supabase.com/dashboard):
 
 #### Projeto já em produção (atualização incremental)
 
-Use `supabase/migrations/APLICAR_NO_DASHBOARD.sql` — seções aditivas **011–022** documentadas e idempotentes. Cole uma seção por vez ou o arquivo inteiro.
+Use `supabase/migrations/APLICAR_NO_DASHBOARD.sql` — seções aditivas **011–023** documentadas e idempotentes. Cole uma seção por vez ou o arquivo inteiro.
 
 ### 4. Storage (Supabase Dashboard)
 
@@ -167,13 +167,14 @@ Workflow: [.github/workflows/e2e.yml](./.github/workflows/e2e.yml)
 
 ## Checklist go-live
 
-- [ ] Migrations `001`–`022` aplicadas (ou `APLICAR_NO_DASHBOARD.sql` + `VALIDAR_PRODUCAO.sql` se DB existente)
+- [ ] Migrations `001`–`023` aplicadas (ou `APLICAR_NO_DASHBOARD.sql` + `VALIDAR_PRODUCAO.sql` se DB existente)
 - [ ] Buckets `avatars` e `checkins` criados + políticas (`003`)
 - [ ] `NEXT_PUBLIC_APP_URL` na Vercel = Site URL no Supabase
 - [ ] Redirect URLs: `/auth/callback` e `/reset-password` (dev + prod)
 - [ ] Teste: cadastro, login, esqueci senha, check-in com foto, feed, ranking
 - [ ] Push (opcional): chaves VAPID na Vercel + permissão no navegador
 - [ ] Push mobile: migration `022`, projeto/credenciais EAS e development build física
+- [ ] Exclusão de conta: migration `023`, `/account-deletion` publicada e smoke com conta descartável
 - [ ] Lembretes diários (opcional): `CRON_SECRET` na Vercel + usuário ativa no Perfil
 - [ ] Sentry (opcional): DSN configurado + alertas
 

@@ -124,6 +124,12 @@ export default async function ProfilePage() {
           <LogOut className="h-4 w-4" /> Sair da conta
         </Button>
       </form>
+
+      <Link href="/account-deletion">
+        <Button variant="danger" fullWidth>
+          Excluir minha conta
+        </Button>
+      </Link>
     </div>
   );
 }

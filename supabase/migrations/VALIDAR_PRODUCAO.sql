@@ -117,7 +117,10 @@ select
   to_regprocedure('public.register_mobile_push_device(uuid,text,character varying,text,character varying)') is not null
     as register_mobile_push_device_ok,
   to_regprocedure('public.unregister_mobile_push_device(uuid)') is not null
-    as unregister_mobile_push_device_ok;
+    as unregister_mobile_push_device_ok,
+  to_regprocedure('public.prepare_account_deletion(uuid)') is not null
+    as prepare_account_deletion_ok;
 
 -- Esperado: buckets_ok = 2, storage_policies_count >= 7,
--- activity_type_policies_count = 4 e os três campos mobile_* = true.
+-- activity_type_policies_count = 4, os três campos mobile_* = true
+-- e prepare_account_deletion_ok = true.

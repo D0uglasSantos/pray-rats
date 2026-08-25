@@ -73,6 +73,7 @@ export async function signIn(formData: FormData): Promise<ActionResult> {
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const requestedRedirect = formData.get("redirect");
 
   if (!email || !password) {
     return { success: false, error: "Preencha e-mail e senha." };
@@ -96,7 +97,13 @@ export async function signIn(formData: FormData): Promise<ActionResult> {
     return { success: false, error: "E-mail ou senha incorretos." };
   }
 
-  redirect("/home");
+  const destination =
+    typeof requestedRedirect === "string" &&
+    requestedRedirect.startsWith("/") &&
+    !requestedRedirect.startsWith("//")
+      ? requestedRedirect
+      : "/home";
+  redirect(destination);
 }
 
 export async function signOut(): Promise<void> {
