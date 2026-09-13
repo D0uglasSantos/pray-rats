@@ -16,7 +16,7 @@ export const maxDuration = 60;
 
 /**
  * Lembretes diários de check-in (manhã/tarde/noite).
- * Chamado pelo Vercel Cron (ver vercel.json) a cada 30 min; para cada usuário
+ * Chamado pelo GitHub Actions a cada 30 min; para cada usuário
  * com lembretes ativos, envia push se o horário local cair na janela de um
  * slot, se ainda não houve envio para aquele slot/dia e se não há check-in hoje.
  */

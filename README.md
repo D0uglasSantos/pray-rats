@@ -66,7 +66,7 @@ Execute **na ordem numérica** no [SQL Editor](https://supabase.com/dashboard):
 
 #### Projeto já em produção (atualização incremental)
 
-Use `supabase/migrations/APLICAR_NO_DASHBOARD.sql` — seções aditivas **011–023** documentadas e idempotentes. Cole uma seção por vez ou o arquivo inteiro.
+Use `supabase/migrations/APLICAR_NO_DASHBOARD.sql` — seções aditivas **011–024** documentadas e idempotentes. Cole uma seção por vez ou o arquivo inteiro.
 
 ### 4. Storage (Supabase Dashboard)
 
@@ -128,7 +128,7 @@ Abra [http://localhost:3000](http://localhost:3000).
 | `VAPID_PRIVATE_KEY` | Se usar push |
 | `VAPID_SUBJECT` | Se usar push |
 | `EXPO_ACCESS_TOKEN` | Opcional; segurança reforçada do Expo Push mobile |
-| `CRON_SECRET` | Se usar lembretes diários |
+| `CRON_SECRET` | Se usar lembretes diários ou receipts Expo |
 | `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` | Opcional |
 
 3. Atualize **Site URL** e **Redirect URLs** no Supabase com a URL de produção.
@@ -152,6 +152,7 @@ check-in no dia não recebem o lembrete.
   (migration `020`); o usuário ativa em **Perfil → Lembretes diários**.
 - Envios são deduplicados em `daily_reminder_sends` (1 push por slot/dia).
 - Instalações do app ficam em `mobile_push_devices` (migration `022`); Web Push e Expo Push são enviados de forma independente.
+- Tickets aceitos pelo Expo ficam temporariamente em `expo_push_tickets` (migration `024`), sem título/corpo. O workflow [push-receipts.yml](./.github/workflows/push-receipts.yml) consulta os receipts a cada 30 minutos, registra erros e desativa instalações que retornam `DeviceNotRegistered`.
 
 ### CI — testes E2E (GitHub Actions)
 
@@ -167,13 +168,13 @@ Workflow: [.github/workflows/e2e.yml](./.github/workflows/e2e.yml)
 
 ## Checklist go-live
 
-- [ ] Migrations `001`–`023` aplicadas (ou `APLICAR_NO_DASHBOARD.sql` + `VALIDAR_PRODUCAO.sql` se DB existente)
+- [ ] Migrations `001`–`024` aplicadas (ou `APLICAR_NO_DASHBOARD.sql` + `VALIDAR_PRODUCAO.sql` se DB existente)
 - [ ] Buckets `avatars` e `checkins` criados + políticas (`003`)
 - [ ] `NEXT_PUBLIC_APP_URL` na Vercel = Site URL no Supabase
 - [ ] Redirect URLs: `/auth/callback` e `/reset-password` (dev + prod)
 - [ ] Teste: cadastro, login, esqueci senha, check-in com foto, feed, ranking
 - [ ] Push (opcional): chaves VAPID na Vercel + permissão no navegador
-- [ ] Push mobile: migration `022`, projeto/credenciais EAS e development build física
+- [ ] Push mobile: migrations `022` e `024`, projeto/credenciais EAS, `CRON_SECRET` no GitHub/Vercel e development build física
 - [ ] Exclusão de conta: migration `023`, `/account-deletion` publicada e smoke com conta descartável
 - [ ] Lembretes diários (opcional): `CRON_SECRET` na Vercel + usuário ativa no Perfil
 - [ ] Sentry (opcional): DSN configurado + alertas

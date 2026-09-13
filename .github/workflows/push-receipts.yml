@@ -1,0 +1,24 @@
+name: Expo Push receipts
+
+on:
+  schedule:
+    - cron: "15,45 * * * *"
+  workflow_dispatch:
+
+jobs:
+  receipts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Consultar receipts pendentes
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ]; then
+            echo "Secret CRON_SECRET não configurado no repositório."
+            exit 1
+          fi
+          curl -fsS -H "Authorization: Bearer $CRON_SECRET" \
+            "https://pray-rats.vercel.app/api/cron/push-receipts"
+          echo
