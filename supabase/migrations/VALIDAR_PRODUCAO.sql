@@ -110,6 +110,8 @@ using (
 
 select
   (select count(*) from storage.buckets where id in ('avatars', 'checkins')) as buckets_ok,
+  (select count(*) from storage.buckets where id in ('avatars', 'checkins') and public = false)
+    as private_buckets_ok,
   (select count(*) from pg_policies where schemaname = 'storage' and tablename = 'objects'
      and policyname ilike any (array['%avatar%', '%checkin%'])) as storage_policies_count,
   (select count(*) from pg_policies where schemaname = 'public' and tablename = 'activity_types') as activity_type_policies_count,
@@ -126,8 +128,13 @@ select
     select 1
     from public.auth_rate_limits
     where rate_key !~ '^(signIn|signUp|resetPassword):[0-9a-f]{64}$'
-  ) as auth_rate_limit_keys_minimized;
+  ) as auth_rate_limit_keys_minimized,
+  to_regprocedure('public.can_read_checkin_image(text)') is not null
+    as private_checkin_authorization_ok,
+  to_regprocedure('public.can_remove_unreferenced_checkin_image(text)') is not null
+    as private_checkin_cleanup_ok;
 
--- Esperado: buckets_ok = 2, storage_policies_count >= 7,
+-- Esperado: buckets_ok = 2, private_buckets_ok = 2, storage_policies_count >= 8,
 -- activity_type_policies_count = 4, os três campos mobile_* = true
--- prepare_account_deletion_ok, expo_push_tickets_ok e auth_rate_limit_keys_minimized = true.
+-- prepare_account_deletion_ok, expo_push_tickets_ok, auth_rate_limit_keys_minimized
+-- private_checkin_authorization_ok e private_checkin_cleanup_ok = true.

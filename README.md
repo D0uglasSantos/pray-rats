@@ -62,11 +62,11 @@ Execute **na ordem numérica** no [SQL Editor](https://supabase.com/dashboard):
 | `002_fix_groups_rls.sql` | Correções RLS de grupos |
 | `003_storage_policies.sql` | Políticas Storage (requer buckets — ver abaixo) |
 | `004` … `010` | Features incrementais |
-| `011` … `017` | Segurança, rate limit, rankings MV, OAuth |
+| `011` … `026` | Segurança, social, push, exclusão, privacidade e storage privado |
 
 #### Projeto já em produção (atualização incremental)
 
-Use `supabase/migrations/APLICAR_NO_DASHBOARD.sql` — seções aditivas **011–025** documentadas. Cole uma seção por vez ou o arquivo inteiro. A seção 025 limpa somente contadores técnicos legados de rate limit antes de recriá-los com identificadores derivados.
+Use `supabase/migrations/APLICAR_NO_DASHBOARD.sql` — seções aditivas **011–026** documentadas. Cole uma seção por vez ou o arquivo inteiro. A seção 025 limpa somente contadores técnicos legados de rate limit; a 026 converte referências e restringe as imagens.
 
 ### 4. Storage (Supabase Dashboard)
 
@@ -74,10 +74,12 @@ Em **Storage → New bucket**, crie:
 
 | Bucket | Público | Uso |
 |--------|---------|-----|
-| `avatars` | Sim | Foto de perfil |
-| `checkins` | Sim | Fotos de check-in |
+| `avatars` | Não | Foto de perfil; leitura autenticada por URL assinada |
+| `checkins` | Não | Fotos de check-in; leitura conforme grupo/visibilidade por URL assinada |
 
-Depois rode `003_storage_policies.sql` (se ainda não aplicou).
+Depois rode as migrations na ordem, incluindo `003_storage_policies.sql` e `026_private_image_storage.sql`.
+
+Em uma atualização existente, publique primeiro o PWA compatível com referências privadas, aplique a migration 026 e então faça o smoke de imagens antes de distribuir o mobile.
 
 ### 5. Supabase Auth
 
@@ -170,8 +172,8 @@ Workflow: [.github/workflows/e2e.yml](./.github/workflows/e2e.yml)
 
 ## Checklist go-live
 
-- [ ] Migrations `001`–`025` aplicadas (ou `APLICAR_NO_DASHBOARD.sql` + `VALIDAR_PRODUCAO.sql` se DB existente)
-- [ ] Buckets `avatars` e `checkins` criados + políticas (`003`)
+- [ ] Migrations `001`–`026` aplicadas (ou `APLICAR_NO_DASHBOARD.sql` + `VALIDAR_PRODUCAO.sql` se DB existente)
+- [ ] Buckets privados `avatars` e `checkins` criados + políticas (`003` e `026`)
 - [ ] `NEXT_PUBLIC_APP_URL` na Vercel = Site URL no Supabase
 - [ ] Redirect URLs: `/auth/callback` e `/reset-password` (dev + prod)
 - [ ] Teste: cadastro, login, esqueci senha, check-in com foto, feed, ranking

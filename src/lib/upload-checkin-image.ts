@@ -5,6 +5,7 @@ import {
 import { prepareCheckinImageForUpload } from "@/lib/prepare-checkin-image";
 import { mapActionError } from "@/lib/errors/map-action-error";
 import { createClient } from "@/lib/supabase/client";
+import { createStorageImageReference } from "@/lib/storage-image";
 
 export type UploadCheckinImageResult =
   | { success: true; url: string }
@@ -57,9 +58,5 @@ export async function uploadCheckinImageFromClient(
     };
   }
 
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("checkins").getPublicUrl(path);
-
-  return { success: true, url: publicUrl };
+  return { success: true, url: createStorageImageReference("checkins", path) };
 }

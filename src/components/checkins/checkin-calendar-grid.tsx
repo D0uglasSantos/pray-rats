@@ -8,6 +8,7 @@ import { getCheckinImageDisplayUrl } from "@/lib/checkin-image-url";
 import { cn } from "@/lib/utils/cn";
 import type { CheckinDayEntry } from "@/components/checkins/checkin-calendar";
 import { CheckinDayModal } from "@/components/checkins/checkin-day-modal";
+import { StorageImage } from "@/components/ui/storage-image";
 
 interface CheckinCalendarGridProps {
   days: Date[];
@@ -52,8 +53,7 @@ export function CheckinCalendarGrid({
 
           const content = imageUrl ? (
             <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <StorageImage
                 src={imageUrl}
                 alt=""
                 className={cn(

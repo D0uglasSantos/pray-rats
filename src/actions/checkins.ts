@@ -27,9 +27,10 @@ import { statsLookbackDate, streakLookbackDate } from "@/lib/stats-lookback";
 import { getCheckinsEngagement } from "@/actions/checkin-engagement";
 import { notifyGroupOfCheckin } from "@/actions/notifications";
 import { getActivitiesByGroupIds, getUserGroups } from "@/actions/groups";
+import { isOwnedStorageImageReference } from "@/lib/storage-image";
+import { removeUnreferencedCheckinImage } from "@/lib/checkin-image-cleanup";
 import type { ActionResult } from "@/actions/auth";
 import type {
-  Checkin,
   CheckinEditContext,
   CheckinVisibility,
   GroupWithRole,
@@ -117,6 +118,13 @@ async function createCheckinInGroup(
     return { success: false, error: "Faça login para continuar." };
   }
 
+  if (
+    payload.imageUrl &&
+    !isOwnedStorageImageReference(payload.imageUrl, "checkins", user.id)
+  ) {
+    return { success: false, error: "Referência da foto inválida." };
+  }
+
   const title = payload.title.trim();
   if (!title) {
     return { success: false, error: "Informe um título para o check-in." };
@@ -166,6 +174,13 @@ export async function createCheckinsForGroups(
 
   if (!user) {
     return { success: false, error: "Faça login para continuar." };
+  }
+
+  if (
+    input.imageUrl &&
+    !isOwnedStorageImageReference(input.imageUrl, "checkins", user.id)
+  ) {
+    return { success: false, error: "Referência da foto inválida." };
   }
 
   const userGroups = (await getUserGroups(user.id)) as GroupWithRole[];
@@ -360,6 +375,13 @@ export async function updateCheckinsForGroups(
     return { success: false, error: "Faça login para continuar." };
   }
 
+  if (
+    input.imageUrl &&
+    !isOwnedStorageImageReference(input.imageUrl, "checkins", user.id)
+  ) {
+    return { success: false, error: "Referência da foto inválida." };
+  }
+
   const context = await getCheckinForEdit(input.checkinId);
   if (!context) {
     return { success: false, error: "Check-in não encontrado." };
@@ -439,6 +461,14 @@ export async function updateCheckinsForGroups(
       success: false,
       error: failures[0]?.error ?? "Não foi possível atualizar o check-in.",
     };
+  }
+
+  if (context.checkin.image_url !== (input.imageUrl || null)) {
+    await removeUnreferencedCheckinImage(
+      supabase,
+      user.id,
+      context.checkin.image_url,
+    );
   }
 
   revalidateCheckinPaths(targetGroupIds);
@@ -543,6 +573,12 @@ export async function deleteCheckinsForGroups(
       error: failures[0]?.error ?? "Não foi possível excluir o check-in.",
     };
   }
+
+  await removeUnreferencedCheckinImage(
+    supabase,
+    user.id,
+    context.checkin.image_url,
+  );
 
   revalidateCheckinPaths(targetGroupIds);
 

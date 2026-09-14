@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils/cn";
+import { StorageImage } from "@/components/ui/storage-image";
 
 export function Avatar({
   src,
@@ -26,8 +27,7 @@ export function Avatar({
 
   if (src) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <StorageImage
         src={src}
         alt={name}
         className={cn("rounded-full object-cover", sizes[size], className)}

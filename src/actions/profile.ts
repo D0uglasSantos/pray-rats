@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCachedRankingTop } from "@/lib/cached-group-data";
 import { isUserGroupMember } from "@/lib/group-access";
 import { mapActionError } from "@/lib/errors/map-action-error";
+import { isOwnedStorageImageReference } from "@/lib/storage-image";
 import {
   getPostgresMonthStartISO,
   getPostgresWeekStartISO,
@@ -173,19 +174,6 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
   return { success: true };
 }
 
-function isAllowedAvatarUrl(avatarUrl: string): boolean {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl) return false;
-
-  try {
-    const parsed = new URL(avatarUrl);
-    const expectedPrefix = `${supabaseUrl}/storage/v1/object/public/avatars/`;
-    return parsed.href.startsWith(expectedPrefix);
-  } catch {
-    return false;
-  }
-}
-
 export async function updateAvatarUrl(avatarUrl: string): Promise<ActionResult> {
   const supabase = await createClient();
   const {
@@ -196,7 +184,7 @@ export async function updateAvatarUrl(avatarUrl: string): Promise<ActionResult> 
     return { success: false, error: "Faça login para continuar." };
   }
 
-  if (!isAllowedAvatarUrl(avatarUrl)) {
+  if (!isOwnedStorageImageReference(avatarUrl, "avatars", user.id)) {
     return { success: false, error: "URL de avatar inválida." };
   }
 

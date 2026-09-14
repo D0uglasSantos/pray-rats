@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ImageLightbox } from "@/components/checkins/image-lightbox";
 import { cn } from "@/lib/utils/cn";
+import { useStorageImageUrl } from "@/hooks/use-storage-image-url";
 
 interface CheckinImageButtonProps {
   src: string;
@@ -18,6 +19,9 @@ export function CheckinImageButton({
   compact = false,
 }: CheckinImageButtonProps) {
   const [open, setOpen] = useState(false);
+  const resolvedSrc = useStorageImageUrl(src);
+
+  if (!resolvedSrc) return null;
 
   return (
     <>
@@ -32,7 +36,7 @@ export function CheckinImageButton({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={src}
+          src={resolvedSrc}
           alt={alt}
           className={cn(
             compact ? "h-14 w-14 rounded-lg object-cover" : "w-full h-48 object-cover",
@@ -40,7 +44,7 @@ export function CheckinImageButton({
           )}
         />
       </button>
-      {open && <ImageLightbox src={src} alt={alt} onClose={() => setOpen(false)} />}
+      {open && <ImageLightbox src={resolvedSrc} alt={alt} onClose={() => setOpen(false)} />}
     </>
   );
 }

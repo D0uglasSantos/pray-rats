@@ -58,9 +58,9 @@ export default function PrivacyPage() {
           ficam limitados aos contextos autorizados pelo backend.
         </p>
         <p>
-          Avatares e fotos de check-in são atualmente servidos por URLs tecnicamente públicas do
-          armazenamento. Não publique imagens sensíveis. A migração para armazenamento privado é
-          uma medida de proteção planejada antes da release candidata.
+          Avatares e fotos de check-in ficam em armazenamento privado. O aplicativo gera links
+          temporários apenas após verificar a sessão e, para fotos de check-in, a relação do usuário
+          com o grupo e a visibilidade escolhida. Evite publicar imagens sensíveis desnecessárias.
         </p>
       </DocumentSection>
 

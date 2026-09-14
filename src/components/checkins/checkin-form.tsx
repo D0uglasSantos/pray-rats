@@ -22,6 +22,7 @@ import { toDatetimeLocalValue } from "@/lib/checkin-datetime";
 import { cn } from "@/lib/utils/cn";
 import type { ActivityType, CheckinVisibility, GroupWithRole } from "@/types/database";
 import { Lock, Globe } from "lucide-react";
+import { StorageImage } from "@/components/ui/storage-image";
 
 interface CheckinFormProps {
   groups: GroupWithRole[];
@@ -218,8 +219,7 @@ export function CheckinForm({
 
       {imagePreview && (
         <div className="relative rounded-xl overflow-hidden border border-border">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <StorageImage
             src={imagePreview}
             alt="Foto do check-in"
             className="w-full h-36 object-cover"
