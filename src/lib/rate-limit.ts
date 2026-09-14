@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const LIMITS = {
@@ -8,8 +9,15 @@ const LIMITS = {
 
 export type AuthRateLimitAction = keyof typeof LIMITS;
 
-function normalizeKey(action: AuthRateLimitAction, identifier: string): string {
-  return `${action}:${identifier.trim().toLowerCase()}`;
+export function buildRateLimitKey(
+  action: AuthRateLimitAction,
+  identifier: string,
+  secret = process.env.AUTH_RATE_LIMIT_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY,
+): string {
+  if (!secret) throw new Error("AUTH_RATE_LIMIT_SECRET não configurado.");
+  const normalized = identifier.trim().toLowerCase();
+  const digest = createHmac("sha256", secret).update(`${action}:${normalized}`).digest("hex");
+  return `${action}:${digest}`;
 }
 
 /**
@@ -21,9 +29,8 @@ export async function checkAuthRateLimit(
   identifier: string,
 ): Promise<boolean> {
   const { maxAttempts, windowSeconds } = LIMITS[action];
-  const rateKey = normalizeKey(action, identifier);
-
   try {
+    const rateKey = buildRateLimitKey(action, identifier);
     const admin = createAdminClient();
     const { data, error } = await admin.rpc("check_auth_rate_limit", {
       p_key: rateKey,

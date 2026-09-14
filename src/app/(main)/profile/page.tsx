@@ -16,7 +16,7 @@ import { DailyRemindersToggle } from "@/components/profile/daily-reminders-toggl
 import { ProfileTourReplayLink } from "@/components/profile/profile-tour-replay-link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, Plus, Users } from "lucide-react";
+import { FileText, LifeBuoy, LogOut, Plus, ShieldCheck, Users } from "lucide-react";
 import { signOut } from "@/actions/auth";
 
 export default async function ProfilePage() {
@@ -93,6 +93,22 @@ export default async function ProfilePage() {
       <DailyRemindersToggle />
 
       <ProfileTourReplayLink />
+
+      <Card padding="sm" className="space-y-1">
+        <p className="px-2 pb-1 text-sm font-medium">Privacidade e suporte</p>
+        <Link href="/privacy" className="flex items-center gap-3 rounded-xl px-2 py-2.5 hover:bg-surface-secondary">
+          <ShieldCheck className="h-4 w-4 text-primary" />
+          <span className="text-sm">Política de Privacidade</span>
+        </Link>
+        <Link href="/terms" className="flex items-center gap-3 rounded-xl px-2 py-2.5 hover:bg-surface-secondary">
+          <FileText className="h-4 w-4 text-primary" />
+          <span className="text-sm">Termos de Uso</span>
+        </Link>
+        <Link href="/support" className="flex items-center gap-3 rounded-xl px-2 py-2.5 hover:bg-surface-secondary">
+          <LifeBuoy className="h-4 w-4 text-primary" />
+          <span className="text-sm">Suporte</span>
+        </Link>
+      </Card>
 
       <Card padding="sm">
         <div className="flex items-center justify-between mb-2">

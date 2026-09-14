@@ -56,6 +56,17 @@ export default async function AccountDeletionPage() {
       <p className="text-xs text-muted">
         Backups técnicos e registros mínimos de segurança seguem os ciclos dos provedores e não permanecem disponíveis no produto.
       </p>
+      <p className="text-xs text-muted">
+        Consulte também a{" "}
+        <Link href="/privacy" className="font-medium text-primary hover:underline">
+          Política de Privacidade
+        </Link>{" "}
+        ou fale com o{" "}
+        <Link href="/support" className="font-medium text-primary hover:underline">
+          Suporte
+        </Link>
+        .
+      </p>
     </main>
   );
 }

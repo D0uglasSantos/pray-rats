@@ -814,3 +814,62 @@ grant all on table public.expo_push_tickets to service_role;
 
 comment on table public.expo_push_tickets is
   'Metadados temporários para consultar receipts Expo Push; sem conteúdo da notificação.';
+
+-- ─── 025: Minimização de dados do rate limit de autenticação ───────────────
+
+delete from public.auth_rate_limits
+where rate_key !~ '^(signIn|signUp|resetPassword):[a-f0-9]{64}$';
+
+comment on table public.auth_rate_limits is
+  'Contadores temporários de autenticação; rate_key usa finalidade + HMAC-SHA-256 do identificador normalizado.';
+
+create or replace function public.check_auth_rate_limit(
+  p_key text,
+  p_max_attempts integer,
+  p_window_seconds integer
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_row public.auth_rate_limits%rowtype;
+  v_now timestamptz := now();
+begin
+  delete from public.auth_rate_limits
+  where window_start < v_now - interval '24 hours';
+
+  select * into v_row
+  from public.auth_rate_limits
+  where rate_key = p_key
+  for update;
+
+  if not found then
+    insert into public.auth_rate_limits (rate_key, attempt_count, window_start)
+    values (p_key, 1, v_now);
+    return true;
+  end if;
+
+  if v_row.window_start + make_interval(secs => p_window_seconds) < v_now then
+    update public.auth_rate_limits
+    set attempt_count = 1, window_start = v_now
+    where rate_key = p_key;
+    return true;
+  end if;
+
+  if v_row.attempt_count >= p_max_attempts then
+    return false;
+  end if;
+
+  update public.auth_rate_limits
+  set attempt_count = v_row.attempt_count + 1
+  where rate_key = p_key;
+
+  return true;
+end;
+$$;
+
+revoke all on function public.check_auth_rate_limit(text, integer, integer) from public;
+revoke all on function public.check_auth_rate_limit(text, integer, integer) from authenticated;
+grant execute on function public.check_auth_rate_limit(text, integer, integer) to service_role;

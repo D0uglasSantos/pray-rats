@@ -121,8 +121,13 @@ select
   to_regprocedure('public.prepare_account_deletion(uuid)') is not null
     as prepare_account_deletion_ok,
   to_regclass('public.expo_push_tickets') is not null
-    as expo_push_tickets_ok;
+    as expo_push_tickets_ok,
+  not exists (
+    select 1
+    from public.auth_rate_limits
+    where rate_key !~ '^(signIn|signUp|resetPassword):[0-9a-f]{64}$'
+  ) as auth_rate_limit_keys_minimized;
 
 -- Esperado: buckets_ok = 2, storage_policies_count >= 7,
 -- activity_type_policies_count = 4, os três campos mobile_* = true
--- prepare_account_deletion_ok = true e expo_push_tickets_ok = true.
+-- prepare_account_deletion_ok, expo_push_tickets_ok e auth_rate_limit_keys_minimized = true.

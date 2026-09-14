@@ -260,7 +260,7 @@ export default async function LandingPage() {
               </div>
             </div>
             <p className="text-sm text-white/90 leading-relaxed">
-              O ranking celebra quem se mantém constante, não quem "vence".
+              O ranking celebra quem se mantém constante, não quem “vence”.
               É uma caminhada em comunidade, não uma competição.
             </p>
           </div>
@@ -366,6 +366,12 @@ export default async function LandingPage() {
             <span className="font-bold text-sm text-foreground">PrayRats</span>
           </div>
           <p className="text-xs text-muted">Constância espiritual em grupo · Feito com fé ✝</p>
+          <nav aria-label="Links legais" className="mt-4 flex flex-wrap justify-center gap-4 text-xs">
+            <Link href="/privacy" className="text-primary hover:underline">Privacidade</Link>
+            <Link href="/terms" className="text-primary hover:underline">Termos</Link>
+            <Link href="/support" className="text-primary hover:underline">Suporte</Link>
+            <Link href="/account-deletion" className="text-primary hover:underline">Excluir conta</Link>
+          </nav>
         </div>
       </footer>
     </div>

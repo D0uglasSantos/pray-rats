@@ -1,7 +1,19 @@
 import { updateSession } from "@/lib/supabase/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 
-const publicRoutes = ["/", "/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback", "/auth/confirm", "/account-deletion"];
+const publicRoutes = [
+  "/",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/auth/callback",
+  "/auth/confirm",
+  "/account-deletion",
+  "/privacy",
+  "/terms",
+  "/support",
+];
 const authRoutes = ["/login", "/signup", "/forgot-password"];
 
 export async function proxy(request: NextRequest) {
