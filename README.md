@@ -1,4 +1,4 @@
-# Pray Rats 🐀🙏
+# PrayRats 🐀🙏
 
 > PWA de check-ins cristãos em grupo — constância espiritual, comunhão e incentivo saudável entre amigos.
 
@@ -127,7 +127,7 @@ Abra [http://localhost:3000](http://localhost:3000).
 | `SUPABASE_SERVICE_ROLE_KEY` | Sim |
 | `AUTH_RATE_LIMIT_SECRET` | Recomendado; segredo dedicado para HMAC do rate limit |
 | `NEXT_PUBLIC_APP_URL` | Sim (`https://pray-rats.vercel.app` ou domínio custom) |
-| `NEXT_PUBLIC_SUPPORT_EMAIL` | Sim antes de publicar nas lojas |
+| `NEXT_PUBLIC_SUPPORT_EMAIL` | Opcional; padrão `prayratscontact@gmail.com` |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Se usar push |
 | `VAPID_PRIVATE_KEY` | Se usar push |
 | `VAPID_SUBJECT` | Se usar push |
@@ -180,7 +180,7 @@ Workflow: [.github/workflows/e2e.yml](./.github/workflows/e2e.yml)
 - [ ] Push (opcional): chaves VAPID na Vercel + permissão no navegador
 - [ ] Push mobile: migrations `022` e `024`, projeto/credenciais EAS, `CRON_SECRET` no GitHub/Vercel e development build física
 - [ ] Exclusão de conta: migration `023`, `/account-deletion` publicada e smoke com conta descartável
-- [ ] Privacidade/suporte: `/privacy`, `/terms` e `/support` publicados + `NEXT_PUBLIC_SUPPORT_EMAIL` configurado
+- [ ] Privacidade/suporte: `/privacy`, `/terms` e `/support` publicados; contato oficial já definido como `prayratscontact@gmail.com`
 - [ ] Lembretes diários (opcional): `CRON_SECRET` na Vercel + usuário ativa no Perfil
 - [ ] Sentry (opcional): DSN configurado + alertas
 

@@ -15,26 +15,19 @@ export default function SupportPage() {
     <PublicDocument
       title="Suporte"
       description="Encontre os caminhos oficiais para ajuda, privacidade e gerenciamento da conta."
-      updatedAt="14 de setembro de 2026"
+      updatedAt="6 de outubro de 2026"
     >
       <DocumentSection title="Como pedir ajuda">
-        {supportEmail ? (
-          <p>
-            Envie um e-mail para{" "}
-            <a
-              className="font-semibold text-primary hover:underline"
-              href={buildSupportMailto(supportEmail)}
-            >
-              {supportEmail}
-            </a>
-            . Não envie sua senha, tokens ou chaves de acesso.
-          </p>
-        ) : (
-          <p>
-            O canal público de e-mail está temporariamente indisponível. Os caminhos de recuperação
-            de senha, preferências e exclusão de conta continuam disponíveis abaixo.
-          </p>
-        )}
+        <p>
+          Envie um e-mail para{" "}
+          <a
+            className="font-semibold text-primary hover:underline"
+            href={buildSupportMailto(supportEmail)}
+          >
+            {supportEmail}
+          </a>
+          . Não envie sua senha, tokens ou chaves de acesso.
+        </p>
         <p>
           Para agilizar, informe versão do app, Android/iOS ou navegador, passos realizados e a
           mensagem exibida. Evite anexar conteúdo pessoal que não seja necessário.
