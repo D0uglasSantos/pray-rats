@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "Saiba quais dados o PrayRats trata e como controlar sua conta.",
 };
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
   return (
     <PublicDocument
       title="Política de Privacidade"

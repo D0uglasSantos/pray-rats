@@ -7,6 +7,32 @@ test.describe("Rotas públicas", () => {
     await expect(page.getByText("PrayRats").first()).toBeVisible();
   });
 
+  test("landing em /pt carrega", async ({ page }) => {
+    await page.goto("/pt");
+    await expect(page.getByRole("heading", { name: /Grupos de fé para todos/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Política de Privacidade" })).toBeVisible();
+  });
+
+  test("páginas legais públicas carregam", async ({ page }) => {
+    await page.goto("/privacy");
+    await expect(page.getByRole("heading", { name: "Política de Privacidade" })).toBeVisible();
+
+    await page.goto("/privacidade");
+    await expect(page.getByRole("heading", { name: "Política de Privacidade" })).toBeVisible();
+
+    await page.goto("/terms");
+    await expect(page.getByRole("heading", { name: "Termos de Uso" })).toBeVisible();
+
+    await page.goto("/termos");
+    await expect(page.getByRole("heading", { name: "Termos de Uso" })).toBeVisible();
+
+    await page.goto("/support");
+    await expect(page.getByRole("heading", { name: "Suporte" })).toBeVisible();
+
+    await page.goto("/suporte");
+    await expect(page.getByRole("heading", { name: "Suporte" })).toBeVisible();
+  });
+
   test("página de login carrega", async ({ page }) => {
     await page.goto("/login");
     await expect(page.getByRole("heading", { name: /Bem-vindo de volta/i })).toBeVisible();

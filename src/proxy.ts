@@ -13,6 +13,15 @@ const publicRoutes = [
   "/privacy",
   "/terms",
   "/support",
+  "/privacidade",
+  "/termos",
+  "/suporte",
+  "/pt",
+  "/politica-de-privacidade",
+  "/termos-de-uso",
+  "/termos-de-servico",
+  "/ajuda",
+  "/help",
 ];
 const authRoutes = ["/login", "/signup", "/forgot-password"];
 

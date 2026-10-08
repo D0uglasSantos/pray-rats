@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -16,6 +17,14 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { getSessionUser } from "@/actions/auth";
+import { PublicSiteFooter } from "@/components/legal/public-site-footer";
+import { PublicSiteHeader } from "@/components/legal/public-site-header";
+
+export const metadata: Metadata = {
+  title: "PrayRats — Grupos de fé para constância espiritual",
+  description:
+    "Crie um grupo de responsabilidade espiritual. Registre oração, leitura e prática com seus amigos.",
+};
 
 const steps = [
   {
@@ -55,49 +64,7 @@ export default async function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* ── Header ───────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-md border-b border-border">
-        <div className="mx-auto max-w-lg px-5 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo-pray-rats-256.png"
-              alt="PrayRats"
-              width={32}
-              height={32}
-              className="rounded-lg object-contain"
-            />
-            <span className="font-bold text-foreground tracking-tight">PrayRats</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {user ? (
-              <Link
-                href="/home"
-                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              >
-                Entrar no app
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="text-sm font-medium text-muted hover:text-foreground transition-colors px-3 py-1.5"
-                >
-                  Entrar
-                </Link>
-                <Link
-                  href="/signup"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                >
-                  Criar conta
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <PublicSiteHeader isAuthenticated={Boolean(user)} />
 
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative overflow-hidden">
@@ -108,17 +75,16 @@ export default async function LandingPage() {
             Constância que transforma
           </div>
 
-          <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-foreground mb-4">
-            Constância{" "}
-            <span className="bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
-              espiritual
-            </span>{" "}
-            em grupo
+          <h1 className="mb-4 text-4xl leading-tight font-extrabold tracking-tight text-foreground">
+            Grupos de fé para todos
           </h1>
+          <p className="mb-3 text-lg font-semibold text-foreground">
+            Crie um grupo de responsabilidade espiritual.
+          </p>
 
-          <p className="text-base text-muted leading-relaxed mb-8 max-w-sm mx-auto">
-            Registre suas práticas de fé, mantenha sua sequência e incentive
-            sua comunidade a crescer junto a cada dia.
+          <p className="mx-auto mb-8 max-w-sm text-base leading-relaxed text-muted">
+            Registre e compartilhe oração, leitura e prática com seus amigos.
+            Acompanhe a constância do grupo e cresçam juntos na fé.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -351,29 +317,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ── Footer ───────────────────────────────────────────── */}
-      <footer className="border-t border-border">
-        <div className="mx-auto max-w-lg px-5 py-8 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo-pray-rats-256.png"
-              alt="PrayRats"
-              width={24}
-              height={24}
-              className="rounded-md object-contain"
-            />
-            <span className="font-bold text-sm text-foreground">PrayRats</span>
-          </div>
-          <p className="text-xs text-muted">Constância espiritual em grupo · Feito com fé ✝</p>
-          <nav aria-label="Links legais" className="mt-4 flex flex-wrap justify-center gap-4 text-xs">
-            <Link href="/privacy" className="text-primary hover:underline">Privacidade</Link>
-            <Link href="/terms" className="text-primary hover:underline">Termos</Link>
-            <Link href="/support" className="text-primary hover:underline">Suporte</Link>
-            <Link href="/account-deletion" className="text-primary hover:underline">Excluir conta</Link>
-          </nav>
-        </div>
-      </footer>
+      <PublicSiteFooter />
     </div>
   );
 }
