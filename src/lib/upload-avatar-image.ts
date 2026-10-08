@@ -5,6 +5,7 @@ import {
 import { mapActionError } from "@/lib/errors/map-action-error";
 import { prepareImageForUpload } from "@/lib/prepare-checkin-image";
 import { createClient } from "@/lib/supabase/client";
+import { createStorageImageReference } from "@/lib/storage-image";
 
 const AVATAR_MAX_DIMENSION = 512;
 const AVATAR_JPEG_QUALITY = 0.82;
@@ -63,9 +64,8 @@ export async function uploadAvatarImageFromClient(
     };
   }
 
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("avatars").getPublicUrl(path);
-
-  return { success: true, url: `${publicUrl}?t=${Date.now()}` };
+  return {
+    success: true,
+    url: `${createStorageImageReference("avatars", path)}?v=${Date.now()}`,
+  };
 }

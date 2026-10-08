@@ -1,4 +1,4 @@
-# Pray Rats 🐀🙏
+# PrayRats 🐀🙏
 
 > PWA de check-ins cristãos em grupo — constância espiritual, comunhão e incentivo saudável entre amigos.
 
@@ -62,11 +62,11 @@ Execute **na ordem numérica** no [SQL Editor](https://supabase.com/dashboard):
 | `002_fix_groups_rls.sql` | Correções RLS de grupos |
 | `003_storage_policies.sql` | Políticas Storage (requer buckets — ver abaixo) |
 | `004` … `010` | Features incrementais |
-| `011` … `017` | Segurança, rate limit, rankings MV, OAuth |
+| `011` … `026` | Segurança, social, push, exclusão, privacidade e storage privado |
 
 #### Projeto já em produção (atualização incremental)
 
-Use `supabase/migrations/APLICAR_NO_DASHBOARD.sql` — seções **011–017** documentadas e idempotentes. Cole uma seção por vez ou o arquivo inteiro.
+Use `supabase/migrations/APLICAR_NO_DASHBOARD.sql` — seções aditivas **011–026** documentadas. Cole uma seção por vez ou o arquivo inteiro. A seção 025 limpa somente contadores técnicos legados de rate limit; a 026 converte referências e restringe as imagens.
 
 ### 4. Storage (Supabase Dashboard)
 
@@ -74,10 +74,12 @@ Em **Storage → New bucket**, crie:
 
 | Bucket | Público | Uso |
 |--------|---------|-----|
-| `avatars` | Sim | Foto de perfil |
-| `checkins` | Sim | Fotos de check-in |
+| `avatars` | Não | Foto de perfil; leitura autenticada por URL assinada |
+| `checkins` | Não | Fotos de check-in; leitura conforme grupo/visibilidade por URL assinada |
 
-Depois rode `003_storage_policies.sql` (se ainda não aplicou).
+Depois rode as migrations na ordem, incluindo `003_storage_policies.sql` e `026_private_image_storage.sql`.
+
+Em uma atualização existente, publique primeiro o PWA compatível com referências privadas, aplique a migration 026 e então faça o smoke de imagens antes de distribuir o mobile.
 
 ### 5. Supabase Auth
 
@@ -123,11 +125,14 @@ Abra [http://localhost:3000](http://localhost:3000).
 | `NEXT_PUBLIC_SUPABASE_URL` | Sim |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Sim |
 | `SUPABASE_SERVICE_ROLE_KEY` | Sim |
+| `AUTH_RATE_LIMIT_SECRET` | Recomendado; segredo dedicado para HMAC do rate limit |
 | `NEXT_PUBLIC_APP_URL` | Sim (`https://pray-rats.vercel.app` ou domínio custom) |
+| `NEXT_PUBLIC_SUPPORT_EMAIL` | Opcional; padrão `prayratscontact@gmail.com` |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Se usar push |
 | `VAPID_PRIVATE_KEY` | Se usar push |
 | `VAPID_SUBJECT` | Se usar push |
-| `CRON_SECRET` | Se usar lembretes diários |
+| `EXPO_ACCESS_TOKEN` | Opcional; segurança reforçada do Expo Push mobile |
+| `CRON_SECRET` | Se usar lembretes diários ou receipts Expo |
 | `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` | Opcional |
 
 3. Atualize **Site URL** e **Redirect URLs** no Supabase com a URL de produção.
@@ -150,6 +155,8 @@ check-in no dia não recebem o lembrete.
 - Preferências (opt-in + fuso IANA) ficam em `notification_preferences`
   (migration `020`); o usuário ativa em **Perfil → Lembretes diários**.
 - Envios são deduplicados em `daily_reminder_sends` (1 push por slot/dia).
+- Instalações do app ficam em `mobile_push_devices` (migration `022`); Web Push e Expo Push são enviados de forma independente.
+- Tickets aceitos pelo Expo ficam temporariamente em `expo_push_tickets` (migration `024`), sem título/corpo. O workflow [push-receipts.yml](./.github/workflows/push-receipts.yml) consulta os receipts a cada 30 minutos, registra erros e desativa instalações que retornam `DeviceNotRegistered`.
 
 ### CI — testes E2E (GitHub Actions)
 
@@ -165,12 +172,15 @@ Workflow: [.github/workflows/e2e.yml](./.github/workflows/e2e.yml)
 
 ## Checklist go-live
 
-- [ ] Migrations `001`–`020` aplicadas (ou `APLICAR_NO_DASHBOARD.sql` + `VALIDAR_PRODUCAO.sql` se DB existente)
-- [ ] Buckets `avatars` e `checkins` criados + políticas (`003`)
+- [ ] Migrations `001`–`026` aplicadas (ou `APLICAR_NO_DASHBOARD.sql` + `VALIDAR_PRODUCAO.sql` se DB existente)
+- [ ] Buckets privados `avatars` e `checkins` criados + políticas (`003` e `026`)
 - [ ] `NEXT_PUBLIC_APP_URL` na Vercel = Site URL no Supabase
 - [ ] Redirect URLs: `/auth/callback` e `/reset-password` (dev + prod)
 - [ ] Teste: cadastro, login, esqueci senha, check-in com foto, feed, ranking
 - [ ] Push (opcional): chaves VAPID na Vercel + permissão no navegador
+- [ ] Push mobile: migrations `022` e `024`, projeto/credenciais EAS, `CRON_SECRET` no GitHub/Vercel e development build física
+- [ ] Exclusão de conta: migration `023`, `/account-deletion` publicada e smoke com conta descartável
+- [ ] Privacidade/suporte: `/privacy`, `/terms` e `/support` publicados; contato oficial já definido como `prayratscontact@gmail.com`
 - [ ] Lembretes diários (opcional): `CRON_SECRET` na Vercel + usuário ativa no Perfil
 - [ ] Sentry (opcional): DSN configurado + alertas
 

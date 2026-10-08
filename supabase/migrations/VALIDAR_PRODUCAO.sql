@@ -110,8 +110,31 @@ using (
 
 select
   (select count(*) from storage.buckets where id in ('avatars', 'checkins')) as buckets_ok,
+  (select count(*) from storage.buckets where id in ('avatars', 'checkins') and public = false)
+    as private_buckets_ok,
   (select count(*) from pg_policies where schemaname = 'storage' and tablename = 'objects'
      and policyname ilike any (array['%avatar%', '%checkin%'])) as storage_policies_count,
-  (select count(*) from pg_policies where schemaname = 'public' and tablename = 'activity_types') as activity_type_policies_count;
+  (select count(*) from pg_policies where schemaname = 'public' and tablename = 'activity_types') as activity_type_policies_count,
+  to_regclass('public.mobile_push_devices') is not null as mobile_push_devices_ok,
+  to_regprocedure('public.register_mobile_push_device(uuid,text,character varying,text,character varying)') is not null
+    as register_mobile_push_device_ok,
+  to_regprocedure('public.unregister_mobile_push_device(uuid)') is not null
+    as unregister_mobile_push_device_ok,
+  to_regprocedure('public.prepare_account_deletion(uuid)') is not null
+    as prepare_account_deletion_ok,
+  to_regclass('public.expo_push_tickets') is not null
+    as expo_push_tickets_ok,
+  not exists (
+    select 1
+    from public.auth_rate_limits
+    where rate_key !~ '^(signIn|signUp|resetPassword):[0-9a-f]{64}$'
+  ) as auth_rate_limit_keys_minimized,
+  to_regprocedure('public.can_read_checkin_image(text)') is not null
+    as private_checkin_authorization_ok,
+  to_regprocedure('public.can_remove_unreferenced_checkin_image(text)') is not null
+    as private_checkin_cleanup_ok;
 
--- Esperado: buckets_ok = 2, storage_policies_count >= 7, activity_type_policies_count = 4
+-- Esperado: buckets_ok = 2, private_buckets_ok = 2, storage_policies_count >= 8,
+-- activity_type_policies_count = 4, os três campos mobile_* = true
+-- prepare_account_deletion_ok, expo_push_tickets_ok, auth_rate_limit_keys_minimized
+-- private_checkin_authorization_ok e private_checkin_cleanup_ok = true.

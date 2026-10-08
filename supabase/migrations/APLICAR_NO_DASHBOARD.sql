@@ -572,3 +572,404 @@ where not exists (
   where a.group_id = g.id
     and lower(a.name) = 'outro'
 );
+
+-- ─── 022: Dispositivos mobile para Expo Push ───────────────────────────────
+
+-- Pray Rats — dispositivos mobile para Expo Push.
+-- Aditivo: mantém push_subscriptions exclusivamente para Web Push/PWA.
+
+create table if not exists public.mobile_push_devices (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  installation_id uuid not null unique,
+  expo_push_token text not null unique,
+  platform varchar(10) not null,
+  project_id text not null,
+  app_version varchar(30),
+  enabled boolean not null default true,
+  last_seen_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint mobile_push_devices_platform_check check (platform in ('android', 'ios')),
+  constraint mobile_push_devices_token_check
+    check (
+      expo_push_token like 'ExpoPushToken[%'
+      or expo_push_token like 'ExponentPushToken[%'
+    )
+);
+
+create index if not exists idx_mobile_push_devices_user_enabled
+  on public.mobile_push_devices (user_id, enabled)
+  where enabled = true;
+
+comment on table public.mobile_push_devices is
+  'Tokens Expo Push por instalação mobile. Não armazena Web Push.';
+
+alter table public.mobile_push_devices enable row level security;
+
+drop policy if exists "Users can view own mobile push devices"
+  on public.mobile_push_devices;
+
+create policy "Users can view own mobile push devices"
+  on public.mobile_push_devices
+  for select
+  using (auth.uid() = user_id);
+
+create or replace function public.register_mobile_push_device(
+  p_installation_id uuid,
+  p_expo_push_token text,
+  p_platform varchar,
+  p_project_id text,
+  p_app_version varchar default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_device_id uuid;
+begin
+  if v_user_id is null then
+    raise exception 'NOT_AUTHENTICATED';
+  end if;
+
+  if p_platform not in ('android', 'ios') then
+    raise exception 'INVALID_PLATFORM';
+  end if;
+
+  if not (
+    p_expo_push_token like 'ExpoPushToken[%'
+    or p_expo_push_token like 'ExponentPushToken[%'
+  ) then
+    raise exception 'INVALID_EXPO_PUSH_TOKEN';
+  end if;
+
+  delete from public.mobile_push_devices
+  where expo_push_token = p_expo_push_token
+    and installation_id <> p_installation_id;
+
+  insert into public.mobile_push_devices (
+    user_id,
+    installation_id,
+    expo_push_token,
+    platform,
+    project_id,
+    app_version,
+    enabled,
+    last_seen_at,
+    updated_at
+  )
+  values (
+    v_user_id,
+    p_installation_id,
+    p_expo_push_token,
+    p_platform,
+    p_project_id,
+    p_app_version,
+    true,
+    now(),
+    now()
+  )
+  on conflict (installation_id)
+  do update set
+    user_id = excluded.user_id,
+    expo_push_token = excluded.expo_push_token,
+    platform = excluded.platform,
+    project_id = excluded.project_id,
+    app_version = excluded.app_version,
+    enabled = true,
+    last_seen_at = now(),
+    updated_at = now()
+  returning id into v_device_id;
+
+  return v_device_id;
+end;
+$$;
+
+create or replace function public.unregister_mobile_push_device(
+  p_installation_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_deleted_count integer;
+begin
+  if v_user_id is null then
+    raise exception 'NOT_AUTHENTICATED';
+  end if;
+
+  delete from public.mobile_push_devices
+  where installation_id = p_installation_id
+    and user_id = v_user_id;
+
+  get diagnostics v_deleted_count = row_count;
+  return v_deleted_count > 0;
+end;
+$$;
+
+revoke all on function public.register_mobile_push_device(uuid, text, varchar, text, varchar)
+  from public;
+revoke all on function public.unregister_mobile_push_device(uuid)
+  from public;
+grant execute on function public.register_mobile_push_device(uuid, text, varchar, text, varchar)
+  to authenticated;
+grant execute on function public.unregister_mobile_push_device(uuid)
+  to authenticated;
+
+-- ─── 023: Preparação segura para exclusão de conta ─────────────────────────
+
+create or replace function public.prepare_account_deletion(p_user_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_group record;
+  v_successor_id uuid;
+  v_transferred integer := 0;
+  v_deleted_groups integer := 0;
+begin
+  if coalesce(auth.jwt() ->> 'role', '') <> 'service_role' then
+    raise exception 'SERVICE_ROLE_REQUIRED';
+  end if;
+
+  for v_group in
+    select g.id
+    from public.groups g
+    where g.created_by = p_user_id
+    for update
+  loop
+    select gm.user_id
+      into v_successor_id
+    from public.group_members gm
+    where gm.group_id = v_group.id
+      and gm.user_id <> p_user_id
+    order by (gm.role = 'admin') desc, gm.joined_at asc, gm.user_id asc
+    limit 1;
+
+    if v_successor_id is null then
+      delete from public.groups where id = v_group.id;
+      v_deleted_groups := v_deleted_groups + 1;
+    else
+      update public.group_members
+      set role = 'admin'
+      where group_id = v_group.id
+        and user_id = v_successor_id;
+
+      update public.groups
+      set created_by = v_successor_id,
+          updated_at = now()
+      where id = v_group.id;
+
+      v_transferred := v_transferred + 1;
+    end if;
+  end loop;
+
+  return jsonb_build_object(
+    'transferred_groups', v_transferred,
+    'deleted_empty_groups', v_deleted_groups
+  );
+end;
+$$;
+
+revoke all on function public.prepare_account_deletion(uuid) from public;
+revoke all on function public.prepare_account_deletion(uuid) from anon;
+revoke all on function public.prepare_account_deletion(uuid) from authenticated;
+grant execute on function public.prepare_account_deletion(uuid) to service_role;
+
+-- ─── 024: Tickets e receipts do Expo Push ──────────────────────────────────
+
+create table if not exists public.expo_push_tickets (
+  receipt_id text primary key,
+  device_id uuid not null references public.mobile_push_devices(id) on delete cascade,
+  status varchar(12) not null default 'pending',
+  attempts smallint not null default 0,
+  next_check_at timestamptz,
+  expires_at timestamptz not null default (now() + interval '24 hours'),
+  checked_at timestamptz,
+  error_code text,
+  error_message text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint expo_push_tickets_status_check
+    check (status in ('pending', 'ok', 'error', 'expired')),
+  constraint expo_push_tickets_attempts_check check (attempts >= 0)
+);
+
+create index if not exists idx_expo_push_tickets_due
+  on public.expo_push_tickets (next_check_at)
+  where status = 'pending';
+
+alter table public.expo_push_tickets enable row level security;
+revoke all on table public.expo_push_tickets from anon;
+revoke all on table public.expo_push_tickets from authenticated;
+grant all on table public.expo_push_tickets to service_role;
+
+comment on table public.expo_push_tickets is
+  'Metadados temporários para consultar receipts Expo Push; sem conteúdo da notificação.';
+
+-- ─── 025: Minimização de dados do rate limit de autenticação ───────────────
+
+delete from public.auth_rate_limits
+where rate_key !~ '^(signIn|signUp|resetPassword):[a-f0-9]{64}$';
+
+comment on table public.auth_rate_limits is
+  'Contadores temporários de autenticação; rate_key usa finalidade + HMAC-SHA-256 do identificador normalizado.';
+
+create or replace function public.check_auth_rate_limit(
+  p_key text,
+  p_max_attempts integer,
+  p_window_seconds integer
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_row public.auth_rate_limits%rowtype;
+  v_now timestamptz := now();
+begin
+  delete from public.auth_rate_limits
+  where window_start < v_now - interval '24 hours';
+
+  select * into v_row
+  from public.auth_rate_limits
+  where rate_key = p_key
+  for update;
+
+  if not found then
+    insert into public.auth_rate_limits (rate_key, attempt_count, window_start)
+    values (p_key, 1, v_now);
+    return true;
+  end if;
+
+  if v_row.window_start + make_interval(secs => p_window_seconds) < v_now then
+    update public.auth_rate_limits
+    set attempt_count = 1, window_start = v_now
+    where rate_key = p_key;
+    return true;
+  end if;
+
+  if v_row.attempt_count >= p_max_attempts then
+    return false;
+  end if;
+
+  update public.auth_rate_limits
+  set attempt_count = v_row.attempt_count + 1
+  where rate_key = p_key;
+
+  return true;
+end;
+$$;
+
+revoke all on function public.check_auth_rate_limit(text, integer, integer) from public;
+revoke all on function public.check_auth_rate_limit(text, integer, integer) from authenticated;
+grant execute on function public.check_auth_rate_limit(text, integer, integer) to service_role;
+
+-- ─── 026: Imagens privadas e URLs assinadas ───────────────────────────────
+
+update public.profiles
+set avatar_url = 'storage://avatars/' || split_part(
+  split_part(avatar_url, '/storage/v1/object/public/avatars/', 2), '?', 1
+)
+where avatar_url like '%/storage/v1/object/public/avatars/%';
+
+update public.checkins
+set image_url = 'storage://checkins/' || split_part(
+  split_part(image_url, '/storage/v1/object/public/checkins/', 2), '?', 1
+)
+where image_url like '%/storage/v1/object/public/checkins/%';
+
+update storage.buckets set public = false where id in ('avatars', 'checkins');
+
+drop policy if exists "Checkin images are publicly readable" on storage.objects;
+drop policy if exists "Avatars are publicly readable" on storage.objects;
+drop policy if exists "Authenticated users can read avatars" on storage.objects;
+drop policy if exists "Authorized members can read checkin images" on storage.objects;
+
+create or replace function public.can_read_checkin_image(object_name text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select auth.uid() is not null
+    and split_part(object_name, '/', 1) ~ '^[0-9a-f-]{36}$'
+    and exists (
+      select 1
+      from public.checkins c
+      where c.image_url = 'storage://checkins/' || object_name
+        and c.user_id::text = split_part(object_name, '/', 1)
+        and (
+          c.user_id = auth.uid()
+          or (c.visibility = 'public' and public.is_group_member(c.group_id, auth.uid()))
+          or public.is_group_admin(c.group_id, auth.uid())
+        )
+    );
+$$;
+
+revoke all on function public.can_read_checkin_image(text) from public;
+revoke all on function public.can_read_checkin_image(text) from anon;
+grant execute on function public.can_read_checkin_image(text) to authenticated;
+grant execute on function public.can_read_checkin_image(text) to service_role;
+
+create or replace function public.can_remove_unreferenced_checkin_image(object_name text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select auth.uid() is not null
+    and auth.uid()::text = split_part(object_name, '/', 1)
+    and not exists (
+      select 1 from public.checkins c
+      where c.image_url = 'storage://checkins/' || object_name
+    );
+$$;
+
+revoke all on function public.can_remove_unreferenced_checkin_image(text) from public;
+revoke all on function public.can_remove_unreferenced_checkin_image(text) from anon;
+grant execute on function public.can_remove_unreferenced_checkin_image(text) to authenticated;
+grant execute on function public.can_remove_unreferenced_checkin_image(text) to service_role;
+
+create policy "Authenticated users can read avatars"
+on storage.objects for select to authenticated
+using (bucket_id = 'avatars');
+
+create policy "Authorized members can read checkin images"
+on storage.objects for select to authenticated
+using (
+  bucket_id = 'checkins'
+  and (
+    auth.uid()::text = (storage.foldername(name))[1]
+    or public.can_read_checkin_image(name)
+  )
+);
+
+drop policy if exists "Users can delete own avatar" on storage.objects;
+create policy "Users can delete own avatar"
+on storage.objects for delete to authenticated
+using (
+  bucket_id = 'avatars'
+  and auth.uid()::text = (storage.foldername(name))[1]
+);
+
+refresh materialized view public.group_rankings_mv;
+refresh materialized view public.weekly_group_rankings_mv;
+refresh materialized view public.monthly_group_rankings_mv;
+
+comment on function public.can_read_checkin_image(text) is
+  'Autoriza imagem privada somente ao autor, integrante para check-in público ou administrador do grupo.';
+
+comment on function public.can_remove_unreferenced_checkin_image(text) is
+  'Autoriza o proprietário a remover uma foto somente quando nenhum check-in ainda referencia o objeto.';

@@ -17,6 +17,7 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
   const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
 
   useEffect(() => {
     if (!SOCIAL_AUTH_ENABLED) return;
@@ -46,6 +47,7 @@ export function LoginForm() {
       <AuthEmailDivider />
       */}
       <form action={handleSubmit} className="space-y-4">
+      {redirectTo && <input type="hidden" name="redirect" value={redirectTo} />}
       <Input
         name="email"
         type="email"

@@ -112,6 +112,17 @@ export function SignupForm() {
       <Button type="submit" fullWidth loading={loading}>
         Criar conta
       </Button>
+      <p className="text-center text-xs leading-5 text-muted">
+        Ao criar sua conta, você declara que leu os{" "}
+        <Link href="/terms" className="font-medium text-primary hover:underline">
+          Termos de Uso
+        </Link>{" "}
+        e a{" "}
+        <Link href="/privacy" className="font-medium text-primary hover:underline">
+          Política de Privacidade
+        </Link>
+        .
+      </p>
       <p className="text-center text-sm text-muted">
         Já tem conta?{" "}
         <Link href="/login" className="text-primary font-medium hover:underline">

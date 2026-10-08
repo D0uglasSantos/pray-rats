@@ -1,7 +1,19 @@
 import { updateSession } from "@/lib/supabase/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 
-const publicRoutes = ["/", "/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback", "/auth/confirm"];
+const publicRoutes = [
+  "/",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/auth/callback",
+  "/auth/confirm",
+  "/account-deletion",
+  "/privacy",
+  "/terms",
+  "/support",
+];
 const authRoutes = ["/login", "/signup", "/forgot-password"];
 
 export async function proxy(request: NextRequest) {
@@ -23,7 +35,9 @@ export async function proxy(request: NextRequest) {
 
   const { supabaseResponse, user } = await updateSession(request);
 
-  const isPublic = publicRoutes.some((r) => pathname.startsWith(r));
+  const isPublic = publicRoutes.some((route) =>
+    route === "/" ? pathname === "/" : pathname.startsWith(route),
+  );
   const isAuthRoute = authRoutes.some((r) => pathname === r);
   const isInvite = pathname.startsWith("/invite/");
 

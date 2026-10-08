@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { Camera, ImageIcon, X } from "lucide-react";
 import { CHECKIN_IMAGE_MAX_SIZE_LABEL } from "@/lib/checkin-image-limits";
 import { cn } from "@/lib/utils/cn";
+import { StorageImage } from "@/components/ui/storage-image";
 
 interface ImageUploadProps {
   preview: string | null;
@@ -45,8 +46,7 @@ export function ImageUpload({
 
       {preview ? (
         <div className="relative rounded-xl overflow-hidden border border-border">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <StorageImage
             src={preview}
             alt="Prévia da foto"
             className="w-full h-48 object-cover"

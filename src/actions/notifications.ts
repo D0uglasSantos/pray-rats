@@ -9,6 +9,7 @@ import { mapActionError } from "@/lib/errors/map-action-error";
 import { logServerError } from "@/lib/monitoring";
 import { isPushConfigured } from "@/lib/push-delivery";
 import { sendPushToUser } from "@/lib/send-push-to-user";
+import { sendExpoPushToUser } from "@/lib/send-expo-push-to-user";
 import type { ActionResult } from "@/actions/auth";
 
 export interface Notification {
@@ -169,11 +170,10 @@ async function fanOutGroupNotifications({
   for (const userId of memberUserIds) {
     await createNotificationForUser(userId, type, title, body, link);
 
-    try {
-      await sendPushToUser(userId, title, body, link);
-    } catch {
-      // Push is best-effort
-    }
+    await Promise.allSettled([
+      sendPushToUser(userId, title, body, link),
+      sendExpoPushToUser(userId, title, body, link),
+    ]);
   }
 }
 

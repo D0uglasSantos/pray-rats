@@ -11,7 +11,7 @@ export function createAdminClient() {
 
   if (!serviceRoleKey) {
     throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY não configurada. Necessária para envio de push.",
+      "SUPABASE_SERVICE_ROLE_KEY não configurada. Necessária para operações privilegiadas.",
     );
   }
 
