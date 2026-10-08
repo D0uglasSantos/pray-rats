@@ -1,5 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { getSessionUser } from "@/actions/auth";
+import { PublicSiteFooter } from "@/components/legal/public-site-footer";
+import { PublicSiteHeader } from "@/components/legal/public-site-header";
 
 type PublicDocumentProps = {
   title: string;
@@ -8,43 +11,49 @@ type PublicDocumentProps = {
   children: ReactNode;
 };
 
-export function PublicDocument({
+export async function PublicDocument({
   title,
   description,
   updatedAt,
   children,
 }: PublicDocumentProps) {
+  const user = await getSessionUser();
+
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-2xl px-5 py-10">
-      <header className="mb-8 space-y-3">
-        <Link href="/" className="text-sm font-semibold text-primary hover:underline">
-          PrayRats
-        </Link>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
-        <p className="text-sm leading-6 text-muted">{description}</p>
-        <p className="text-xs text-muted">Última atualização: {updatedAt}</p>
-      </header>
+    <div className="min-h-screen bg-background text-foreground">
+      <PublicSiteHeader isAuthenticated={Boolean(user)} />
+      <main className="mx-auto w-full max-w-2xl px-5 py-10">
+        <header className="mb-8 space-y-3">
+          <p className="text-xs font-semibold tracking-widest text-primary uppercase">
+            PrayRats
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
+          <p className="text-sm leading-6 text-muted">{description}</p>
+          <p className="text-xs text-muted">Última atualização: {updatedAt}</p>
+        </header>
 
-      <article className="space-y-8">{children}</article>
+        <article className="space-y-8">{children}</article>
 
-      <nav
-        aria-label="Documentos e suporte"
-        className="mt-10 flex flex-wrap gap-x-4 gap-y-2 border-t border-border pt-6 text-sm"
-      >
-        <Link href="/privacy" className="font-medium text-primary hover:underline">
-          Privacidade
-        </Link>
-        <Link href="/terms" className="font-medium text-primary hover:underline">
-          Termos de Uso
-        </Link>
-        <Link href="/support" className="font-medium text-primary hover:underline">
-          Suporte
-        </Link>
-        <Link href="/account-deletion" className="font-medium text-primary hover:underline">
-          Excluir conta
-        </Link>
-      </nav>
-    </main>
+        <nav
+          aria-label="Documentos e suporte"
+          className="mt-10 flex flex-wrap gap-x-4 gap-y-2 border-t border-border pt-6 text-sm"
+        >
+          <Link href="/privacy" className="font-medium text-primary hover:underline">
+            Privacidade
+          </Link>
+          <Link href="/terms" className="font-medium text-primary hover:underline">
+            Termos de Uso
+          </Link>
+          <Link href="/support" className="font-medium text-primary hover:underline">
+            Suporte
+          </Link>
+          <Link href="/account-deletion" className="font-medium text-primary hover:underline">
+            Excluir conta
+          </Link>
+        </nav>
+      </main>
+      <PublicSiteFooter />
+    </div>
   );
 }
 

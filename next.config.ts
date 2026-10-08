@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
 import { withSentryConfig } from "@sentry/nextjs";
+import { PUBLIC_SITE_REDIRECTS } from "./src/lib/public-paths";
 
 const withPWA = withPWAInit({
   dest: "public",
@@ -22,6 +23,13 @@ const nextConfig: NextConfig = {
         hostname: "*.supabase.co",
       },
     ],
+  },
+  async redirects() {
+    return PUBLIC_SITE_REDIRECTS.map((redirect) => ({
+      source: redirect.source,
+      destination: redirect.destination,
+      permanent: true,
+    }));
   },
 };
 

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "Condições para criar uma conta e usar o PrayRats.",
 };
 
-export default function TermsPage() {
+export default async function TermsPage() {
   return (
     <PublicDocument
       title="Termos de Uso"

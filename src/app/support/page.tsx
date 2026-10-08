@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "Ajuda, privacidade e gerenciamento da conta PrayRats.",
 };
 
-export default function SupportPage() {
+export default async function SupportPage() {
   const supportEmail = getSupportEmail();
 
   return (

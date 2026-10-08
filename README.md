@@ -180,7 +180,7 @@ Workflow: [.github/workflows/e2e.yml](./.github/workflows/e2e.yml)
 - [ ] Push (opcional): chaves VAPID na Vercel + permissão no navegador
 - [ ] Push mobile: migrations `022` e `024`, projeto/credenciais EAS, `CRON_SECRET` no GitHub/Vercel e development build física
 - [ ] Exclusão de conta: migration `023`, `/account-deletion` publicada e smoke com conta descartável
-- [ ] Privacidade/suporte: `/privacy`, `/terms` e `/support` publicados; contato oficial já definido como `prayratscontact@gmail.com`
+- [ ] Privacidade/suporte: `/privacy`, `/terms`, `/support` e aliases `/pt`, `/privacidade`, `/termos`, `/suporte` publicados; contato oficial já definido como `prayratscontact@gmail.com`
 - [ ] Lembretes diários (opcional): `CRON_SECRET` na Vercel + usuário ativa no Perfil
 - [ ] Sentry (opcional): DSN configurado + alertas
 
