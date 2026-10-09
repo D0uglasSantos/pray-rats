@@ -172,14 +172,15 @@ Workflow: [.github/workflows/e2e.yml](./.github/workflows/e2e.yml)
 
 ## Checklist go-live
 
-- [ ] Migrations `001`–`026` aplicadas (ou `APLICAR_NO_DASHBOARD.sql` + `VALIDAR_PRODUCAO.sql` se DB existente)
-- [ ] Buckets privados `avatars` e `checkins` criados + políticas (`003` e `026`)
+- [x] Migrations `001`–`026` aplicadas; migrations incrementais `022`–`026` e `VALIDAR_PRODUCAO.sql` aprovadas em produção em 09/10/2026
+- [x] Buckets privados `avatars` e `checkins` criados + políticas (`003` e `026`); smoke de URL assinada aprovado
 - [ ] `NEXT_PUBLIC_APP_URL` na Vercel = Site URL no Supabase
 - [ ] Redirect URLs: `/auth/callback` e `/reset-password` (dev + prod)
 - [ ] Teste: cadastro, login, esqueci senha, check-in com foto, feed, ranking
 - [ ] Push (opcional): chaves VAPID na Vercel + permissão no navegador
-- [ ] Push mobile: migrations `022` e `024`, projeto/credenciais EAS, `CRON_SECRET` no GitHub/Vercel e development build física
-- [ ] Exclusão de conta: migration `023`, `/account-deletion` publicada e smoke com conta descartável
+- [ ] Push mobile: migrations `022`/`024` e `CRON_SECRET` no GitHub/Vercel concluídos; falta credencial FCM V1 no EAS e development build física
+- [x] Cron de Expo Push receipts: workflow manual `37940116975` aprovado em 09/10/2026
+- [ ] Exclusão de conta: migration `023` e `/account-deletion` publicadas; falta smoke com conta descartável
 - [ ] Privacidade/suporte: `/privacy`, `/terms`, `/support` e aliases `/pt`, `/privacidade`, `/termos`, `/suporte` publicados; contato oficial já definido como `prayratscontact@gmail.com`
 - [ ] Lembretes diários (opcional): `CRON_SECRET` na Vercel + usuário ativa no Perfil
 - [ ] Sentry (opcional): DSN configurado + alertas
