@@ -1,15 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { after } from "next/server";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { scheduleGroupNotifications } from "@/lib/group-notification-fanout";
 import { mapActionError } from "@/lib/errors/map-action-error";
-import { logServerError } from "@/lib/monitoring";
 import { isPushConfigured } from "@/lib/push-delivery";
-import { sendPushToUser } from "@/lib/send-push-to-user";
-import { sendExpoPushToUser } from "@/lib/send-expo-push-to-user";
 import type { ActionResult } from "@/actions/auth";
 
 export interface Notification {
@@ -122,73 +118,6 @@ export async function markAllAsRead(): Promise<ActionResult> {
   return { success: true };
 }
 
-async function createNotificationForUser(
-  userId: string,
-  type: string,
-  title: string,
-  body: string,
-  link: string,
-): Promise<void> {
-  let admin;
-  try {
-    admin = createAdminClient();
-  } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[notifications] createNotificationForUser", error);
-    }
-    return;
-  }
-
-  const { error } = await admin.rpc("create_notification", {
-    p_user_id: userId,
-    p_type: type,
-    p_title: title,
-    p_body: body,
-    p_link: link,
-  });
-
-  if (error && process.env.NODE_ENV === "development") {
-    console.error("[notifications] create_notification", error.message);
-  }
-}
-
-type GroupNotificationPayload = {
-  memberUserIds: string[];
-  type: string;
-  title: string;
-  body: string;
-  link: string;
-};
-
-async function fanOutGroupNotifications({
-  memberUserIds,
-  type,
-  title,
-  body,
-  link,
-}: GroupNotificationPayload): Promise<void> {
-  for (const userId of memberUserIds) {
-    await createNotificationForUser(userId, type, title, body, link);
-
-    await Promise.allSettled([
-      sendPushToUser(userId, title, body, link),
-      sendExpoPushToUser(userId, title, body, link),
-    ]);
-  }
-}
-
-function scheduleGroupNotifications(payload: GroupNotificationPayload): void {
-  after(async () => {
-    try {
-      await fanOutGroupNotifications(payload);
-    } catch (error) {
-      logServerError("notifications.fanOut", error, {
-        memberCount: payload.memberUserIds.length,
-      });
-    }
-  });
-}
-
 export async function notifyGroupOfNewMember(
   groupId: string,
   memberId: string,
@@ -225,7 +154,6 @@ export async function notifyGroupOfCheckin(
   authorId: string,
   authorName: string,
   checkinTitle: string,
-  _checkinId: string,
 ): Promise<void> {
   const supabase = await createClient();
 

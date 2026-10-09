@@ -158,7 +158,6 @@ async function createCheckinInGroup(
     user.id,
     profile?.name ?? "Alguém",
     title,
-    checkinId as string,
   );
 
   return { success: true, data: { checkinId: checkinId as string } };
