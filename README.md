@@ -66,7 +66,7 @@ Execute **na ordem numérica** no [SQL Editor](https://supabase.com/dashboard):
 
 #### Projeto já em produção (atualização incremental)
 
-Use `supabase/migrations/APLICAR_NO_DASHBOARD.sql` — seções aditivas **011–026** documentadas. Cole uma seção por vez ou o arquivo inteiro. A seção 025 limpa somente contadores técnicos legados de rate limit; a 026 converte referências e restringe as imagens.
+Use `supabase/migrations/APLICAR_NO_DASHBOARD.sql` — seções aditivas **011–026** documentadas. Cole uma seção por vez ou o arquivo inteiro. A seção 025 limpa somente contadores técnicos legados de rate limit; a 026 converte referências e restringe as imagens. Depois, execute `VALIDAR_PRODUCAO.sql`, que é somente leitura e deve retornar todos os campos finais como `true`.
 
 ### 4. Storage (Supabase Dashboard)
 
