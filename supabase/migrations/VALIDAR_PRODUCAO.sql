@@ -63,6 +63,8 @@ select
     as prepare_account_deletion_ok,
   to_regclass('public.expo_push_tickets') is not null
     as expo_push_tickets_ok,
+  to_regclass('public.mobile_checkin_notification_dispatches') is not null
+    as mobile_checkin_notification_dispatches_ok,
   not exists (
     select 1
     from public.auth_rate_limits
